@@ -748,7 +748,14 @@ class _ImportPrompt extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          FilledButton(onPressed: onImportSms, child: const Text('Import')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            onPressed: onImportSms,
+            child: const Text('Import'),
+          ),
         ],
       ),
     );
