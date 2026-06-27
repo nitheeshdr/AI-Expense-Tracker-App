@@ -6,7 +6,7 @@
     <application
         android:label="AI Expense Tracker"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/ic_launcher">
         <!-- AdMob App ID (production). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
