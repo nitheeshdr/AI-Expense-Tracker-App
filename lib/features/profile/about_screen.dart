@@ -66,10 +66,8 @@ class AboutScreen extends StatelessWidget {
           Center(
             child: Column(
               children: [
-                Image.asset(
-                  theme.brightness == Brightness.dark
-                      ? 'asset/white.png'
-                      : 'asset/black.png',
+                 Image.asset(
+                  'assets/logo/app-logo.png',
                   height: 64,
                   fit: BoxFit.contain,
                 ),

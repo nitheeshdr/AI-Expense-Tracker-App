@@ -4,9 +4,9 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="ai_expense_tracker"
+        android:label="AI Expense Tracker"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <!-- AdMob App ID (production). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

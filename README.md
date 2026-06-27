@@ -1,7 +1,6 @@
 <div align="center">
 
-<img src="asset/black.png#gh-light-mode-only" height="72" alt="AI Expense Tracker"/>
-<img src="asset/white.png#gh-dark-mode-only" height="72" alt="AI Expense Tracker"/>
+<img src="assets/logo/app-logo.png" height="72" alt="AI Expense Tracker"/>
 
 # AI Expense Tracker
 
@@ -105,6 +104,11 @@ Released under the [MIT License](LICENSE).
 ---
 
 <div align="center">
+
+<img src="asset/black.png#gh-light-mode-only" height="40" alt="Setups Works"/>
+<img src="asset/white.png#gh-dark-mode-only" height="40" alt="Setups Works"/>
+
+<br/>
 
 Built with ❤️ by **[Setups Works](https://github.com/nitheeshdr)**
 

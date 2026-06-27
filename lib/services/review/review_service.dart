@@ -6,7 +6,7 @@ class ReviewService {
   ReviewService._();
   static final ReviewService instance = ReviewService._();
 
-  static const _packageName = 'com.aiexpense.ai_expense_tracker';
+  static const _packageName = 'com.setupsworks.aiexpensetracker';
   final InAppReview _review = InAppReview.instance;
 
   /// Shows the native in-app review sheet when available.

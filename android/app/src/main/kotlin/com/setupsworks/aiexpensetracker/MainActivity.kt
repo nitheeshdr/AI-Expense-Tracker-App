@@ -1,4 +1,4 @@
-package com.aiexpense.ai_expense_tracker
+package com.setupsworks.aiexpensetracker
 
 import io.flutter.embedding.android.FlutterActivity
 
