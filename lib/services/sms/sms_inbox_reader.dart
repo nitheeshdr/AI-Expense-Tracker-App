@@ -81,15 +81,17 @@ class SmsInboxReader {
   }
 
   /// Reads the inbox and converts recognizable transaction SMS into entities.
-  /// [sinceDays] limits how far back we scan (default ~6 months).
-  Future<List<TransactionEntity>> importTransactions({int sinceDays = 180}) async {
+  /// [sinceDays] limits how far back we scan (default ~6 months). When
+  /// [sinceMs] is given it wins — used by the silent catch-up sync to fetch
+  /// only messages that arrived after the last successful sync.
+  Future<List<TransactionEntity>> importTransactions(
+      {int sinceDays = 180, int? sinceMs}) async {
     final messages = await _telephony.getInboxSms(
       columns: [SmsColumn.ADDRESS, SmsColumn.BODY, SmsColumn.DATE],
     );
 
-    final cutoff = DateTime.now()
-        .subtract(Duration(days: sinceDays))
-        .millisecondsSinceEpoch;
+    final cutoff = sinceMs ??
+        DateTime.now().subtract(Duration(days: sinceDays)).millisecondsSinceEpoch;
 
     final out = <TransactionEntity>[];
     for (final m in messages) {

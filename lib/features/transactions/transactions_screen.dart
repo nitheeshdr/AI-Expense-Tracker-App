@@ -171,6 +171,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                 .delete(t.id);
                             ref.read(dataRevisionProvider.notifier).bump();
                             Haptics.success();
+                            await ref
+                                .read(adsManagerProvider)
+                                .registerActionAndMaybeShow();
                           },
                           child: TransactionRow(
                             txn: t,

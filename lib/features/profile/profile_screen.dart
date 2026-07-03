@@ -6,6 +6,7 @@ import '../../core/design/spacing.dart';
 import '../../core/settings/settings.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
+import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/app_sheet.dart';
 import '../../features/sms_import/sms_import_sheet.dart';
 import 'about_screen.dart';
@@ -133,46 +134,6 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.palette_outlined),
-                    const SizedBox(width: 16),
-                    const Text('Accent'),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Wrap(
-                        spacing: 10,
-                        children: [
-                          for (final col in AccentColors.options)
-                            GestureDetector(
-                              onTap: () => ctrl.setAccent(col),
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: Color(col),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: s.accentColor == col
-                                        ? cs.onSurface
-                                        : Colors.transparent,
-                                    width: 2.5,
-                                  ),
-                                ),
-                                child: s.accentColor == col
-                                    ? const Icon(Icons.check,
-                                        size: 16, color: Colors.white)
-                                    : null,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.currency_exchange_outlined),
@@ -205,6 +166,9 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ]),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          const NativeAdCard(),
           const SizedBox(height: AppSpacing.md),
 
           _GroupLabel('About'),

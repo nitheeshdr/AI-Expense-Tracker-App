@@ -32,9 +32,8 @@ class HomeWidgetService {
           'month', 'Spent $symbol${fmt(month.expense)}');
       await HomeWidget.saveWidgetData<String>(
           'income', 'Income $symbol${fmt(month.income)}');
-      // Accent as #AARRGGBB hex for the native side.
-      await HomeWidget.saveWidgetData<String>(
-          'accent', '#${accentColor.toRadixString(16).padLeft(8, '0')}');
+      // Monochrome app: the widget's Add button is always white (black text).
+      await HomeWidget.saveWidgetData<String>('accent', '#FFFFFFFF');
       await HomeWidget.updateWidget(androidName: _androidName);
     } catch (_) {
       // Widget not added / platform unsupported — ignore.

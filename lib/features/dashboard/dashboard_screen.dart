@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/data/categories.dart';
 import '../../core/data/models.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/spacing.dart';
 import '../../core/settings/settings.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
+import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/animated_count.dart';
 import '../../core/widgets/charts/bar_chart.dart';
 import '../../core/widgets/charts/donut_chart.dart';
@@ -296,9 +296,11 @@ class _DashboardList extends ConsumerWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      for (final cat in summary.byCategory.take(5))
+                      for (final (i, cat)
+                          in summary.byCategory.take(5).indexed)
                         _LegendRow(
                             total: cat,
+                            index: i,
                             share: summary.expense <= 0
                                 ? 0
                                 : cat.total / summary.expense),
@@ -350,6 +352,9 @@ class _DashboardList extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
         ],
+
+        const NativeAdCard(),
+        const SizedBox(height: AppSpacing.lg),
 
         // Recent activity
         SectionHeader(
@@ -812,13 +817,15 @@ class _AiInsightCard extends StatelessWidget {
 
 class _LegendRow extends StatelessWidget {
   final CategoryTotal total;
+  final int index;
   final double share;
-  const _LegendRow({required this.total, required this.share});
+  const _LegendRow(
+      {required this.total, required this.index, required this.share});
 
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
-    final color = Categories.of(total.category).color;
+    final color = c.monoShade(index);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(

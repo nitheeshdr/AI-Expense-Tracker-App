@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../data/categories.dart';
 import '../../data/models.dart';
 import '../../design/app_theme.dart';
 
@@ -23,6 +22,8 @@ class CategoryDonut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
+    // Monochrome: slices are grayscale steps (largest = full ink).
+    final shades = [for (var i = 0; i < data.length; i++) c.monoShade(i)];
     return SizedBox(
       width: size,
       height: size,
@@ -35,6 +36,7 @@ class CategoryDonut extends StatelessWidget {
             data: data,
             progress: t,
             track: c.hairline,
+            shades: shades,
           ),
           child: Center(child: center),
         ),
@@ -47,11 +49,13 @@ class _DonutPainter extends CustomPainter {
   final List<CategoryTotal> data;
   final double progress;
   final Color track;
+  final List<Color> shades;
 
   _DonutPainter({
     required this.data,
     required this.progress,
     required this.track,
+    required this.shades,
   });
 
   @override
@@ -73,14 +77,15 @@ class _DonutPainter extends CustomPainter {
 
     var start = -math.pi / 2;
     const gap = 0.04;
-    for (final slice in data) {
+    for (var i = 0; i < data.length; i++) {
+      final slice = data[i];
       final sweep = (slice.total / total) * (2 * math.pi) * progress;
       if (sweep <= 0) continue;
       final paint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
         ..strokeCap = StrokeCap.round
-        ..color = Categories.of(slice.category).color;
+        ..color = shades[i % shades.length];
       canvas.drawArc(
         rect,
         start + gap / 2,
@@ -94,5 +99,5 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DonutPainter old) =>
-      old.progress != progress || old.data != data;
+      old.progress != progress || old.data != data || old.shades != shades;
 }

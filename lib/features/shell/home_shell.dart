@@ -28,12 +28,14 @@ class HomeShell extends ConsumerStatefulWidget {
   ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends ConsumerState<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell>
+    with WidgetsBindingObserver {
   int _index = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Begin real-time SMS capture: new bank/UPI messages become transactions
     // automatically and pop a snackbar so the spend is visible immediately.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -52,6 +54,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           behavior: SnackBarBehavior.floating,
         ));
       });
+      // Catch up on any bank SMS that arrived while the app was closed.
+      ref.read(smsImportProvider.notifier).silentSync();
       _refreshWidget();
       _refreshLive();
       _handleWidgetLaunch();
@@ -71,17 +75,38 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     HomeWidget.widgetClicked.listen(_onWidgetUri);
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Every time the app comes back to the foreground, silently pull any bank
+    // SMS received in the meantime so the data is always current.
+    if (state == AppLifecycleState.resumed) {
+      ref.read(smsImportProvider.notifier).silentSync();
+    }
+  }
+
   Future<void> _refreshLive() async {
     final s = ref.read(settingsProvider);
-    final range = (
-      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)
-          .add(const Duration(days: 1)),
-    );
-    final totals =
-        await ref.read(transactionRepoProvider).totals(range.$1, range.$2);
+    final now = DateTime.now();
+    final dayStart = DateTime(now.year, now.month, now.day);
+    final repo = ref.read(transactionRepoProvider);
+    final today = await repo.totals(dayStart, dayStart.add(const Duration(days: 1)));
+    final month = await repo.totals(
+        DateTime(now.year, now.month), DateTime(now.year, now.month + 1));
+    final budget = s.monthlyBudget;
+    final pct = budget <= 0
+        ? 0
+        : ((month.expense / budget) * 100).clamp(0, 100).round();
     await AppNotifications.instance.showLive(
-      'Spent ${Money.format(totals.expense, code: s.currency)} today · tap to add more',
+      'Today ${Money.format(today.expense, code: s.currency)} · month '
+      '${Money.format(month.expense, code: s.currency)} of '
+      '${Money.format(budget, code: s.currency)} ($pct%)',
+      progress: pct,
     );
   }
 
@@ -361,12 +386,12 @@ class _ActionsSheet extends StatelessWidget {
             subtitle: 'Log money, or pull transactions from your SMS.'),
         _Tile(
             icon: Icons.south_west,
-            color: cs.error,
+            color: cs.onSurface,
             title: 'Add expense',
             onTap: onAddExpense),
         _Tile(
             icon: Icons.north_east,
-            color: const Color(0xFF12B98C),
+            color: cs.onSurface,
             title: 'Add income',
             onTap: onAddIncome),
         _Tile(

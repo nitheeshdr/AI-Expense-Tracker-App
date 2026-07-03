@@ -213,7 +213,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                   _amount.isEmpty ? '0' : _amount,
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isIncome ? const Color(0xFF12B98C) : cs.onSurface,
+                    color: cs.onSurface,
                   ),
                 ),
               ],

@@ -96,23 +96,35 @@ class AppNotifications {
 
   static const int _liveId = 42;
 
-  /// Shows/updates the persistent "live" spending notification with quick
-  /// Add expense / Add income actions.
-  Future<void> showLive(String todaySummary) async {
+  /// Shows/updates the persistent "live activity" spending notification:
+  /// an ongoing, progress-style notification (today's spend vs monthly
+  /// budget) with quick Add actions. Visible on the notification panel and
+  /// lock screen on all Android phones; on Samsung One UI (Android 16) this
+  /// progress-style ongoing form is what the Now Bar promotes.
+  Future<void> showLive(
+    String todaySummary, {
+    int progress = 0,
+    int maxProgress = 100,
+  }) async {
     if (!_ready) await init();
     if (!_ready) return;
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'live_spending',
         'Live spending',
-        channelDescription: 'Today spending summary',
+        channelDescription: 'Ongoing today-spending live activity',
         importance: Importance.low,
         priority: Priority.low,
         ongoing: true,
         autoCancel: false,
         onlyAlertOnce: true,
         showWhen: false,
+        category: AndroidNotificationCategory.progress,
         visibility: NotificationVisibility.public,
+        showProgress: maxProgress > 0,
+        maxProgress: maxProgress,
+        progress: progress.clamp(0, maxProgress),
+        subText: 'Live',
         actions: const [
           AndroidNotificationAction('add_expense', 'Add expense',
               showsUserInterface: true),

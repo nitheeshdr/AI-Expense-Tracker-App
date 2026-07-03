@@ -1,19 +1,66 @@
 import 'package:flutter/material.dart';
 
-import 'colors.dart';
 import 'typography.dart';
 
 enum AppBrightness { dark, light }
 
-/// Builds the app's Material 3 [ThemeData] from a violet seed color.
+/// Builds the app's Material 3 [ThemeData] as a pure monochrome (black &
+/// white) system. Dark mode uses true #000000 surfaces for AMOLED displays;
+/// light mode is pure white with black ink.
 class AppThemeData {
   AppThemeData._();
 
-  static ThemeData build(Brightness brightness, {int? seed}) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: Color(seed ?? AppPalette.violet.toARGB32()),
+  /// Hand-built monochrome scheme. No hues anywhere — only black, white and
+  /// gray steps, so the app reads as a clean two-tone product and dark mode
+  /// saves power on AMOLED panels.
+  static ColorScheme _monoScheme(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    const white = Color(0xFFFFFFFF);
+    const black = Color(0xFF000000);
+    final ink = dark ? white : black;
+    final paper = dark ? black : white;
+
+    Color gray(int v) => Color(0xFF000000 | (v << 16) | (v << 8) | v);
+
+    return ColorScheme(
       brightness: brightness,
+      primary: ink,
+      onPrimary: paper,
+      primaryContainer: dark ? gray(0x24) : gray(0xE8),
+      onPrimaryContainer: ink,
+      secondary: dark ? gray(0xD4) : gray(0x2A),
+      onSecondary: paper,
+      secondaryContainer: dark ? gray(0x1C) : gray(0xEF),
+      onSecondaryContainer: ink,
+      tertiary: dark ? gray(0xA8) : gray(0x55),
+      onTertiary: paper,
+      tertiaryContainer: dark ? gray(0x17) : gray(0xF3),
+      onTertiaryContainer: ink,
+      error: ink,
+      onError: paper,
+      errorContainer: dark ? gray(0x24) : gray(0xE8),
+      onErrorContainer: ink,
+      surface: paper,
+      onSurface: ink,
+      onSurfaceVariant: dark ? gray(0xB8) : gray(0x4A),
+      surfaceContainerLowest: paper,
+      surfaceContainerLow: dark ? gray(0x0E) : gray(0xF7),
+      surfaceContainer: dark ? gray(0x14) : gray(0xF2),
+      surfaceContainerHigh: dark ? gray(0x1A) : gray(0xEC),
+      surfaceContainerHighest: dark ? gray(0x22) : gray(0xE5),
+      outline: dark ? gray(0x55) : gray(0x9E),
+      outlineVariant: dark ? gray(0x2E) : gray(0xDD),
+      shadow: black,
+      scrim: black,
+      inverseSurface: ink,
+      onInverseSurface: paper,
+      inversePrimary: paper,
+      surfaceTint: Colors.transparent,
     );
+  }
+
+  static ThemeData build(Brightness brightness, {int? seed}) {
+    final scheme = _monoScheme(brightness);
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
@@ -47,7 +94,7 @@ class AppThemeData {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 52),
+          minimumSize: const Size.fromHeight(52),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -75,9 +122,9 @@ class AppThemeData {
   }
 }
 
-/// Semantic color bridge. Derives app tokens from the active Material 3
-/// [ColorScheme] so existing screen code (`c.accent`, `c.surface`, …) keeps
-/// working while rendering true Material 3 tonal colors.
+/// Semantic color bridge. Fully monochrome: every token maps to black/white
+/// or a gray step derived from the active scheme, so existing screen code
+/// (`c.accent`, `c.income`, …) renders two-tone without edits.
 class AppColors {
   final ColorScheme scheme;
   const AppColors(this.scheme);
@@ -98,16 +145,23 @@ class AppColors {
   Color get textTertiary => scheme.onSurfaceVariant.withValues(alpha: 0.65);
   Color get accent => scheme.primary;
   Color get accentDeep => scheme.primary;
-  Color get accentSoft => scheme.primaryContainer.withValues(alpha: 0.5);
+  Color get accentSoft => scheme.onSurface.withValues(alpha: 0.08);
   Color get onAccent => scheme.onPrimary;
-  Color get income => isDark ? AppPalette.mint : AppPalette.mintDeep;
-  Color get expense => scheme.error;
-  Color get warning => AppPalette.amber;
-  Color get info => AppPalette.sky;
+  // Monochrome semantics: direction is conveyed by +/− signs and arrow icons,
+  // not hue. Income is full ink; expense slightly softened.
+  Color get income => scheme.onSurface;
+  Color get expense => scheme.onSurfaceVariant;
+  Color get warning => scheme.onSurfaceVariant;
+  Color get info => scheme.onSurfaceVariant;
   Color get shadow => Colors.black;
 
-  /// Solid accent "gradient" (single color) — the app uses flat fills, not
-  /// gradients, so this keeps the API while rendering a solid color.
+  /// Grayscale ladder for charts/legends where series need distinct steps.
+  Color monoShade(int index) {
+    const steps = [1.0, 0.78, 0.60, 0.45, 0.32, 0.22, 0.15];
+    final a = steps[index % steps.length];
+    return scheme.onSurface.withValues(alpha: a);
+  }
+
   Gradient get accentGradient =>
       LinearGradient(colors: [scheme.primary, scheme.primary]);
 

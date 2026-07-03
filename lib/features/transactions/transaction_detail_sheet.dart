@@ -97,6 +97,9 @@ class _DetailSheet extends ConsumerWidget {
                   await ref.read(transactionRepoProvider).delete(txn.id);
                   ref.read(dataRevisionProvider.notifier).bump();
                   if (context.mounted) Navigator.of(context).pop();
+                  await ref
+                      .read(adsManagerProvider)
+                      .registerActionAndMaybeShow();
                 },
               ),
             ),

@@ -13,15 +13,16 @@ class CategoryIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final def = Categories.of(category);
+    final ink = Theme.of(context).colorScheme.onSurface;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: def.color.withValues(alpha: 0.16),
+        color: ink.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(size * 0.30),
       ),
-      child: Icon(def.icon, color: def.color, size: size * 0.5),
+      child: Icon(def.icon, color: ink, size: size * 0.5),
     );
   }
 }

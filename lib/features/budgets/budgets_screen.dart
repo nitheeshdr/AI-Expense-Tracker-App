@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/data/categories.dart';
 import '../../core/data/models.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/spacing.dart';
@@ -305,7 +304,7 @@ class _CategoryBudgetCard extends ConsumerWidget {
     final pct = budget.amount <= 0
         ? 0.0
         : (spent / budget.amount).clamp(0.0, 1.0);
-    final color = Categories.of(budget.category).color;
+    final color = c.textPrimary;
     final over = spent > budget.amount;
 
     return Padding(
