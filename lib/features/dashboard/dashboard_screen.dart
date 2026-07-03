@@ -152,6 +152,11 @@ class _DashboardList extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.xl),
 
+        // Smart insights
+        const SectionHeader(title: 'Insights'),
+        _InsightsRow(summary: summary, settings: settings),
+        const SizedBox(height: AppSpacing.xl),
+
         // Explore — feature grid
         const SectionHeader(title: 'Explore'),
         _FeatureGrid(features: [
@@ -261,6 +266,20 @@ class _DashboardList extends ConsumerWidget {
                 color: c.accent,
                 height: 130,
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // Month heatmap
+        _Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${Dates.monthYear(DateTime.now())} heatmap',
+                  style: TextStyle(color: c.textSecondary, fontSize: 13)),
+              const SizedBox(height: AppSpacing.md),
+              _MonthHeatmap(daily: summary.daily),
             ],
           ),
         ),
@@ -484,7 +503,7 @@ class _Greeting extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_salutation,
+        Text('$_salutation · ${Dates.dayMonth(DateTime.now())}',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 2),
@@ -638,6 +657,195 @@ class _SpendCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(label, style: TextStyle(fontSize: 11, color: c.textTertiary)),
         ],
+      ),
+    );
+  }
+}
+
+/// Horizontally scrollable smart-insight cards computed from real data:
+/// daily average, month-end forecast vs budget, biggest spend day, no-spend days.
+class _InsightsRow extends StatelessWidget {
+  final MonthSummary summary;
+  final AppSettings settings;
+  const _InsightsRow({required this.summary, required this.settings});
+
+  @override
+  Widget build(BuildContext context) {
+    final cur = settings.currency;
+    final now = DateTime.now();
+    final daysElapsed = now.day;
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+
+    final avgPerDay = daysElapsed > 0 ? summary.expense / daysElapsed : 0.0;
+    final projected = avgPerDay * daysInMonth;
+    final budget = settings.monthlyBudget;
+    final overPace = budget > 0 && projected > budget;
+
+    final monthDays =
+        summary.daily.where((d) => d.day.month == now.month).toList();
+    DayTotal? biggest;
+    var noSpend = 0;
+    for (final d in monthDays) {
+      if (d.day.day > daysElapsed) continue;
+      if (d.total <= 0) noSpend++;
+      if (biggest == null || d.total > biggest.total) biggest = d;
+    }
+
+    final cards = <Widget>[
+      _InsightCard(
+        icon: Icons.speed_outlined,
+        value: Money.format(avgPerDay, code: cur, compact: true),
+        label: 'Avg / day',
+      ),
+      _InsightCard(
+        icon: overPace ? Icons.trending_up : Icons.verified_outlined,
+        value: Money.format(projected, code: cur, compact: true),
+        label: overPace ? 'Forecast · over budget' : 'Forecast · on track',
+        emphasized: overPace,
+      ),
+      if (biggest != null && biggest.total > 0)
+        _InsightCard(
+          icon: Icons.local_fire_department_outlined,
+          value: Money.format(biggest.total, code: cur, compact: true),
+          label: 'Peak · ${Dates.dayMonth(biggest.day)}',
+        ),
+      _InsightCard(
+        icon: Icons.self_improvement_outlined,
+        value: '$noSpend',
+        label: 'No-spend days',
+      ),
+    ];
+
+    return SizedBox(
+      height: 104,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: cards.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+        itemBuilder: (_, i) => cards[i],
+      ),
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final bool emphasized;
+  const _InsightCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    this.emphasized = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTheme.of(context);
+    // Emphasized card inverts (ink surface) for an elegant mono highlight.
+    final bg = emphasized ? c.textPrimary : c.surface;
+    final fg = emphasized ? c.background : c.textPrimary;
+    final sub = emphasized
+        ? c.background.withValues(alpha: 0.7)
+        : c.textTertiary;
+    return Container(
+      width: 148,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(color: c.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon, size: 18, color: fg),
+          Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 17, fontWeight: FontWeight.w800, color: fg)),
+          Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10.5, color: sub)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Calendar-style month heatmap: one cell per day, shaded by spend intensity
+/// on the monochrome ladder. Future days render as faint outlines.
+class _MonthHeatmap extends StatelessWidget {
+  final List<DayTotal> daily;
+  const _MonthHeatmap({required this.daily});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTheme.of(context);
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final firstWeekday = DateTime(now.year, now.month, 1).weekday; // 1=Mon
+
+    final byDay = <int, double>{
+      for (final d in daily)
+        if (d.day.month == now.month && d.day.year == now.year)
+          d.day.day: d.total,
+    };
+    final maxSpend = byDay.values.isEmpty
+        ? 0.0
+        : byDay.values.reduce((a, b) => a > b ? a : b);
+
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final cells = <Widget>[
+      for (final l in labels)
+        Center(
+            child: Text(l,
+                style: TextStyle(fontSize: 10, color: c.textTertiary))),
+      for (var i = 1; i < firstWeekday; i++) const SizedBox.shrink(),
+      for (var day = 1; day <= daysInMonth; day++)
+        _heatCell(context, day, byDay[day] ?? 0, maxSpend, day > now.day),
+    ];
+
+    return GridView.count(
+      crossAxisCount: 7,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 5,
+      crossAxisSpacing: 5,
+      children: cells,
+    );
+  }
+
+  Widget _heatCell(BuildContext context, int day, double spend,
+      double maxSpend, bool future) {
+    final c = AppTheme.of(context);
+    final intensity =
+        maxSpend <= 0 ? 0.0 : (spend / maxSpend).clamp(0.0, 1.0);
+    final fill = future
+        ? Colors.transparent
+        : c.textPrimary.withValues(alpha: 0.05 + intensity * 0.9);
+    final showInk = !future && intensity > 0.45;
+    return Container(
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(
+            color: future ? c.hairline : Colors.transparent),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$day',
+        style: TextStyle(
+          fontSize: 9.5,
+          fontWeight: FontWeight.w600,
+          color: showInk
+              ? c.background
+              : c.textTertiary.withValues(alpha: future ? 0.5 : 1),
+        ),
       ),
     );
   }

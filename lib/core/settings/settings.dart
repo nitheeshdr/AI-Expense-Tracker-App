@@ -33,6 +33,7 @@ class AppSettings {
   final bool hapticsEnabled;
   final bool animationsEnabled;
   final bool hideBalances;
+  final bool appLockEnabled;
   final double monthlyBudget;
 
   const AppSettings({
@@ -44,6 +45,7 @@ class AppSettings {
     this.hapticsEnabled = true,
     this.animationsEnabled = true,
     this.hideBalances = false,
+    this.appLockEnabled = false,
     this.monthlyBudget = 45000,
   });
 
@@ -66,6 +68,7 @@ class AppSettings {
     bool? hapticsEnabled,
     bool? animationsEnabled,
     bool? hideBalances,
+    bool? appLockEnabled,
     double? monthlyBudget,
   }) =>
       AppSettings(
@@ -77,6 +80,7 @@ class AppSettings {
         hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
         animationsEnabled: animationsEnabled ?? this.animationsEnabled,
         hideBalances: hideBalances ?? this.hideBalances,
+        appLockEnabled: appLockEnabled ?? this.appLockEnabled,
         monthlyBudget: monthlyBudget ?? this.monthlyBudget,
       );
 }
@@ -92,6 +96,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kHaptics = 'haptics';
   static const _kAnimations = 'animations';
   static const _kHideBalances = 'hideBalances';
+  static const _kAppLock = 'appLock';
   static const _kBudget = 'monthlyBudget';
   static const _kGroqKey = 'groq_api_key';
 
@@ -116,6 +121,7 @@ class SettingsController extends Notifier<AppSettings> {
       hapticsEnabled: prefs.getBool(_kHaptics) ?? true,
       animationsEnabled: prefs.getBool(_kAnimations) ?? true,
       hideBalances: prefs.getBool(_kHideBalances) ?? false,
+      appLockEnabled: prefs.getBool(_kAppLock) ?? false,
       monthlyBudget: prefs.getDouble(_kBudget) ?? 45000,
     );
     Haptics.enabled = loaded.hapticsEnabled;
@@ -132,6 +138,7 @@ class SettingsController extends Notifier<AppSettings> {
     await prefs.setBool(_kHaptics, s.hapticsEnabled);
     await prefs.setBool(_kAnimations, s.animationsEnabled);
     await prefs.setBool(_kHideBalances, s.hideBalances);
+    await prefs.setBool(_kAppLock, s.appLockEnabled);
     await prefs.setDouble(_kBudget, s.monthlyBudget);
     Haptics.enabled = s.hapticsEnabled;
   }

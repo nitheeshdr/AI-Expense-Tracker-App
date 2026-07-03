@@ -9,6 +9,8 @@ import '../../core/widgets/ads/banner_ad_widget.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/app_sheet.dart';
 import '../../features/sms_import/sms_import_sheet.dart';
+import '../../services/export/export_service.dart';
+import '../../services/security/app_lock_service.dart';
 import 'about_screen.dart';
 import 'groq_key_sheet.dart';
 
@@ -78,6 +80,14 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: const Text('Auto-detect bank & UPI transactions'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => showSmsImportSheet(context, ref),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.file_download_outlined),
+                title: const Text('Export as CSV'),
+                subtitle: const Text('Share all transactions as a spreadsheet'),
+                trailing: const Icon(Icons.ios_share),
+                onTap: () => _exportCsv(context, ref),
               ),
             ]),
           ),
@@ -150,6 +160,14 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             child: Column(children: [
               SwitchListTile(
+                secondary: const Icon(Icons.fingerprint),
+                title: const Text('App lock'),
+                subtitle: const Text('Biometric / device credential on open'),
+                value: s.appLockEnabled,
+                onChanged: (v) => _toggleAppLock(context, ref, v),
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
                 secondary: const Icon(Icons.visibility_off_outlined),
                 title: const Text('Hide balances'),
                 value: s.hideBalances,
@@ -185,6 +203,42 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final count = await ExportService.instance
+          .shareCsv(ref.read(transactionRepoProvider));
+      messenger.showSnackBar(
+          SnackBar(content: Text('Exported $count transactions')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e')));
+    }
+  }
+
+  Future<void> _toggleAppLock(
+      BuildContext context, WidgetRef ref, bool enable) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ctrl = ref.read(settingsProvider.notifier);
+    if (!enable) {
+      // Require auth to turn the lock off.
+      if (await AppLockService.instance.authenticate(
+          reason: 'Confirm to disable app lock')) {
+        await ctrl.update((x) => x.copyWith(appLockEnabled: false));
+      }
+      return;
+    }
+    if (!await AppLockService.instance.isAvailable()) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('No screen lock / biometrics set up on this device')));
+      return;
+    }
+    // Verify once before enabling so the user can't lock themselves out.
+    if (await AppLockService.instance
+        .authenticate(reason: 'Confirm to enable app lock')) {
+      await ctrl.update((x) => x.copyWith(appLockEnabled: true));
+    }
   }
 
   Future<void> _unlockWithRewarded(BuildContext context, WidgetRef ref) async {

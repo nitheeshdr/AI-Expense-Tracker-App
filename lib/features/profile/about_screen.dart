@@ -21,6 +21,15 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('1.1.0', 'Jul 2026', [
+    'Biometric app lock (fingerprint / device credential)',
+    'Export all transactions as CSV and share anywhere',
+    'Smart insights: daily average, month-end forecast vs budget, peak day, no-spend days',
+    'Calendar spending heatmap for the month',
+    'Pure black & white theme with true AMOLED black dark mode',
+    'Live-activity notification with budget progress on the lock screen',
+    'Automatic silent SMS catch-up sync on every app open',
+  ]),
   _Release('1.0.0', 'Jun 2026', [
     'Automatic bank & UPI SMS tracking with real-time capture',
     'Background sync — transactions added even when the app is closed',
@@ -76,7 +85,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 1.0.0 (build 1)',
+                Text('Version 1.1.0 (build 2)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -125,7 +134,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '1.0.0',
+                  applicationVersion: '1.1.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
