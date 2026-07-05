@@ -10,6 +10,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.38-02569B.svg?logo=flutter)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Android-3DDC84.svg?logo=android)](#)
 [![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-FF6B7D.svg)](#)
+[![Download APK](https://img.shields.io/github/v/release/nitheeshdr/AI-Expense-Tracker-App?label=Download%20APK&logo=android&color=3DDC84)](https://github.com/nitheeshdr/AI-Expense-Tracker-App/releases/latest)
 
 </div>
 
@@ -56,6 +57,23 @@ subscriptions, charts and an AI assistant grounded in your real spending.
 | Widget | `home_widget` |
 
 Architecture is **feature-first** with an MVVM + repository pattern.
+
+## Download
+
+<div align="center">
+
+[![Download APK — v1.1.0](https://img.shields.io/badge/⬇%20Download%20APK-v1.1.0-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/nitheeshdr/AI-Expense-Tracker-App/releases/latest/download/ai-expense-tracker-v1.1.0.apk)
+
+</div>
+
+> **Android only · No Play Store required**  
+> 1. Tap the button above to download `ai-expense-tracker-v1.1.0.apk`  
+> 2. On your Android device go to **Settings → Apps → Special app access → Install unknown apps** and allow your browser/file manager  
+> 3. Open the downloaded APK and tap **Install**
+
+All releases (APK + AAB) are available on the [Releases page](https://github.com/nitheeshdr/AI-Expense-Tracker-App/releases).
+
+---
 
 ## Getting started
 
