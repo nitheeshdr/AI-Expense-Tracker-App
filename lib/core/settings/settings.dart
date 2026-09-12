@@ -9,24 +9,10 @@ import '../utils/haptics.dart';
 /// Theme preference: follow the system, or force light/dark.
 enum AppThemeMode { system, light, dark }
 
-/// Selectable accent (seed) colors for the Material 3 scheme.
-class AccentColors {
-  AccentColors._();
-  static const List<int> options = [
-    0xFF7C6BFF, // violet (default)
-    0xFF2F7CF6, // blue
-    0xFF12B98C, // green
-    0xFFEC5C8E, // pink
-    0xFFFF8A4C, // orange
-    0xFF8B5CF6, // purple
-  ];
-}
-
 /// Immutable snapshot of user preferences.
 @immutable
 class AppSettings {
   final AppThemeMode themeMode;
-  final int accentColor;
   final String currency;
   final String userName;
   final bool onboarded;
@@ -38,7 +24,6 @@ class AppSettings {
 
   const AppSettings({
     this.themeMode = AppThemeMode.dark,
-    this.accentColor = 0xFF7C6BFF,
     this.currency = 'INR',
     this.userName = 'there',
     this.onboarded = false,
@@ -61,7 +46,6 @@ class AppSettings {
 
   AppSettings copyWith({
     AppThemeMode? themeMode,
-    int? accentColor,
     String? currency,
     String? userName,
     bool? onboarded,
@@ -73,7 +57,6 @@ class AppSettings {
   }) =>
       AppSettings(
         themeMode: themeMode ?? this.themeMode,
-        accentColor: accentColor ?? this.accentColor,
         currency: currency ?? this.currency,
         userName: userName ?? this.userName,
         onboarded: onboarded ?? this.onboarded,
@@ -89,7 +72,6 @@ class AppSettings {
 /// storage. Exposed as a Riverpod Notifier.
 class SettingsController extends Notifier<AppSettings> {
   static const _kThemeMode = 'themeMode';
-  static const _kAccent = 'accentColor';
   static const _kCurrency = 'currency';
   static const _kUserName = 'userName';
   static const _kOnboarded = 'onboarded';
@@ -114,7 +96,6 @@ class SettingsController extends Notifier<AppSettings> {
         (m) => m.name == modeName,
         orElse: () => AppThemeMode.dark,
       ),
-      accentColor: prefs.getInt(_kAccent) ?? 0xFF7C6BFF,
       currency: prefs.getString(_kCurrency) ?? 'INR',
       userName: prefs.getString(_kUserName) ?? 'there',
       onboarded: prefs.getBool(_kOnboarded) ?? false,
@@ -131,7 +112,6 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> _persist(AppSettings s) async {
     final prefs = _prefs ??= await SharedPreferences.getInstance();
     await prefs.setString(_kThemeMode, s.themeMode.name);
-    await prefs.setInt(_kAccent, s.accentColor);
     await prefs.setString(_kCurrency, s.currency);
     await prefs.setString(_kUserName, s.userName);
     await prefs.setBool(_kOnboarded, s.onboarded);
@@ -150,7 +130,6 @@ class SettingsController extends Notifier<AppSettings> {
   }
 
   void setThemeMode(AppThemeMode mode) => update((s) => s.copyWith(themeMode: mode));
-  void setAccent(int color) => update((s) => s.copyWith(accentColor: color));
 
   // --- Groq API key (secure storage) ---
   Future<String?> groqKey() => _secure.read(key: _kGroqKey);

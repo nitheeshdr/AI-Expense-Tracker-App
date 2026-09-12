@@ -3,10 +3,10 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'ad_config.dart';
 
-/// Owns the AdMob lifecycle: SDK init, preloading + showing interstitial,
-/// rewarded and app-open ads, and frequency-capping interstitials so the UX
-/// stays clean. Banner and native ads are created per-widget (see the ad
-/// widgets) since they're tied to layout.
+/// Owns the AdMob lifecycle: SDK init, preloading + showing interstitial and
+/// rewarded ads, and frequency-capping interstitials so the UX stays clean.
+/// Banner and native ads are created per-widget (see the ad widgets) since
+/// they're tied to layout.
 class AdsManager {
   AdsManager._();
   static final AdsManager instance = AdsManager._();

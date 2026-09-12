@@ -177,10 +177,9 @@ class BudgetsScreen extends ConsumerWidget {
             children: [
               Text('Savings goals',
                   style: AppType.h2.copyWith(color: c.textPrimary)),
-              GestureDetector(
-                onTap: () => showGoalEditor(context, ref),
-                child: Text('Add goal',
-                    style: AppType.bodySm.copyWith(color: c.accent)),
+              TextButton(
+                onPressed: () => showGoalEditor(context, ref),
+                child: const Text('Add goal'),
               ),
             ],
           ),
@@ -355,21 +354,18 @@ class _Bar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      child: Stack(
-        children: [
-          Container(height: 8, color: c.hairline),
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: progress),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeOutCubic,
-            builder: (context, v, _) => FractionallySizedBox(
-              widthFactor: v.clamp(0.0, 1.0),
-              child: Container(height: 8, color: color),
-            ),
-          ),
-        ],
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: progress),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (context, v, _) => ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        child: LinearProgressIndicator(
+          value: v.clamp(0.0, 1.0),
+          minHeight: 8,
+          backgroundColor: c.hairline,
+          color: color,
+        ),
       ),
     );
   }

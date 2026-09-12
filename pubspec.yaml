@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.0+2
+version: 2.0.0+3
 
 environment:
   sdk: ^3.10.4
@@ -53,6 +53,7 @@ dependencies:
   local_auth: ^3.0.1
   share_plus: ^13.2.0
   path_provider: ^2.1.6
+  in_app_update: ^4.2.5
 
 dev_dependencies:
   flutter_test:
@@ -65,7 +66,15 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.4.7
+  # Not a normal dependency — this package's generated Android plugin
+  # registration breaks release builds (compileReleaseJavaWithJavac fails,
+  # class not found) because its native class isn't included in the release
+  # variant's classpath even though the registrant still references it. It
+  # already did its one job (generating the splash assets checked into
+  # android/app/src/main/res/), so it isn't needed at build time — reinstall
+  # temporarily (`flutter pub add -d flutter_native_splash` + `flutter pub
+  # run flutter_native_splash:create`) only if the splash needs regenerating.
+  # flutter_native_splash: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

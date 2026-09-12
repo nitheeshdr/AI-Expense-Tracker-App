@@ -1,11 +1,10 @@
-import 'dart:math' as math;
-
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../design/app_theme.dart';
 import '../design/typography.dart';
 
-/// Animated circular progress ring with a track + gradient sweep. Used for the
+/// Animated circular progress ring built on the native
+/// [CircularProgressIndicator] (flat color, no gradient). Used for the
 /// financial health score, budget rings and savings goals.
 class ProgressRing extends StatelessWidget {
   final double progress; // 0..1
@@ -36,69 +35,28 @@ class ProgressRing extends StatelessWidget {
         tween: Tween(begin: 0, end: progress.clamp(0, 1)),
         duration: animate ? const Duration(milliseconds: 900) : Duration.zero,
         curve: Curves.easeOutCubic,
-        builder: (context, v, _) => CustomPaint(
-          painter: _RingPainter(
-            progress: v,
-            track: c.hairline,
-            color: ring,
-            stroke: stroke,
-          ),
-          child: Center(child: center),
+        builder: (context, v, _) => Stack(
+          alignment: Alignment.center,
+          children: [
+            // CircularProgressIndicator defaults to its own preferred size
+            // (~36px) when given loose constraints inside a Stack, ignoring
+            // the requested `size` — Positioned.fill forces it to the exact
+            // SizedBox bounds instead.
+            Positioned.fill(
+              child: CircularProgressIndicator(
+                value: v,
+                strokeWidth: stroke,
+                strokeCap: StrokeCap.round,
+                backgroundColor: c.hairline,
+                color: ring,
+              ),
+            ),
+            ?center,
+          ],
         ),
       ),
     );
   }
-}
-
-class _RingPainter extends CustomPainter {
-  final double progress;
-  final Color track;
-  final Color color;
-  final double stroke;
-
-  _RingPainter({
-    required this.progress,
-    required this.track,
-    required this.color,
-    required this.stroke,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = (size.width - stroke) / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    final trackPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..color = track;
-    canvas.drawCircle(center, radius, trackPaint);
-
-    if (progress <= 0) return;
-    final sweepPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..shader = SweepGradient(
-        startAngle: -math.pi / 2,
-        endAngle: 3 * math.pi / 2,
-        colors: [color.withValues(alpha: 0.65), color],
-        transform: const GradientRotation(-math.pi / 2),
-      ).createShader(rect);
-    canvas.drawArc(
-      rect,
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      sweepPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress || old.color != color;
 }
 
 /// Convenience: a health/score ring with a big number in the middle.

@@ -21,6 +21,12 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.0.0', 'Sep 2026', [
+    'Material 3 Expressive redesign: native color scheme, cards, chips, nav bar',
+    'Fixed a crash when granting the notification permission on first launch',
+    'Fixed a startup delay caused by ad-network initialization blocking the launch screen',
+    'In-app updates and a review prompt for engaged users',
+  ]),
   _Release('1.1.0', 'Jul 2026', [
     'Biometric app lock (fingerprint / device credential)',
     'Export all transactions as CSV and share anywhere',
@@ -85,30 +91,19 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 1.1.0 (build 2)',
+                Text('Version 2.0.0 (build 3)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.lock_open_outlined,
-                          size: 14, color: cs.onPrimaryContainer),
-                      const SizedBox(width: 6),
-                      Text('Open source · MIT',
-                          style: TextStyle(
-                              color: cs.onPrimaryContainer,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700)),
-                    ],
-                  ),
+                Chip(
+                  avatar: Icon(Icons.lock_open_outlined,
+                      size: 16, color: cs.onPrimaryContainer),
+                  label: const Text('Open source · MIT'),
+                  labelStyle: TextStyle(
+                      color: cs.onPrimaryContainer,
+                      fontWeight: FontWeight.w700),
+                  backgroundColor: cs.primaryContainer,
+                  side: BorderSide.none,
                 ),
               ],
             ),
@@ -134,7 +129,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '1.1.0',
+                  applicationVersion: '2.0.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
@@ -176,8 +171,9 @@ class AboutScreen extends StatelessWidget {
                 child: const Text('NR'),
               ),
               title: const Text('Nitheesh Rajendran'),
-              subtitle: const Text('Design, setup & engineering'),
+              subtitle: const Text('github.com/nitheeshdr'),
               trailing: Icon(Icons.code, color: cs.onSurfaceVariant),
+              onTap: () => _openUrl('https://github.com/nitheeshdr'),
             ),
           ),
           const SizedBox(height: AppSpacing.xl),

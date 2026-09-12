@@ -298,27 +298,13 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppTheme.of(context);
-    return GestureDetector(
-      onTap: () {
+    return FilterChip(
+      label: Text(label),
+      selected: active,
+      onSelected: (_) {
         Haptics.selection();
         onTap();
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: active ? c.accentSoft : c.surface,
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-          border: Border.all(color: active ? c.accent : c.hairline),
-        ),
-        child: Text(label,
-            style: AppType.bodySm.copyWith(
-              color: active ? c.accent : c.textSecondary,
-              fontWeight: FontWeight.w600,
-            )),
-      ),
     );
   }
 }

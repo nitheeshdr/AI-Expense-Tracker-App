@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../../data/categories.dart';
 import '../../data/models.dart';
 import '../../design/app_theme.dart';
 
@@ -22,8 +23,7 @@ class CategoryDonut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
-    // Monochrome: slices are grayscale steps (largest = full ink).
-    final shades = [for (var i = 0; i < data.length; i++) c.monoShade(i)];
+    final shades = [for (final t in data) Categories.of(t.category).color];
     return SizedBox(
       width: size,
       height: size,

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 import '../../app/providers.dart';
 import '../../core/design/spacing.dart';
@@ -9,6 +12,8 @@ import '../../core/utils/haptics.dart';
 import '../../core/settings/settings.dart';
 import '../../core/widgets/app_sheet.dart';
 import '../../services/notifications/notification_service.dart';
+import '../../services/review/review_prompt_sheet.dart';
+import '../../services/updates/app_update_service.dart';
 import '../../services/widget/home_widget_service.dart';
 import '../add_expense/add_expense_sheet.dart';
 import '../ai_assistant/ai_assistant_screen.dart';
@@ -31,15 +36,34 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell>
     with WidgetsBindingObserver {
   int _index = 0;
+  // Tabs are only built once actually visited — otherwise every ad widget
+  // on every tab (banners/native ads) would fire its ad request the moment
+  // the app opens, regardless of whether the user ever looks at that tab.
+  // That wastes ad inventory and is the main reason "requests" run well
+  // ahead of "impressions" in AdMob: most loaded ads were never seen.
+  final Set<int> _visitedTabs = {0};
+  StreamSubscription<InstallStatus>? _updateSub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    AppUpdateService.instance.checkAndStartFlexibleUpdate();
+    _updateSub = AppUpdateService.instance.installStatus.listen((status) {
+      if (status == InstallStatus.downloaded && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          duration: const Duration(days: 1),
+          content: const Text('Update downloaded'),
+          action: SnackBarAction(
+            label: 'Restart',
+            onPressed: AppUpdateService.instance.completeUpdate,
+          ),
+        ));
+      }
+    });
     // Begin real-time SMS capture: new bank/UPI messages become transactions
     // automatically and pop a snackbar so the spend is visible immediately.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppNotifications.instance.requestPermission();
       ref.read(smsImportProvider.notifier).startRealtime((txn) {
         final currency = ref.read(settingsProvider).currency;
         final isIncome = txn.type.name == 'income';
@@ -60,6 +84,12 @@ class _HomeShellState extends ConsumerState<HomeShell>
       _refreshLive();
       _handleWidgetLaunch();
       _handleNotificationLaunch();
+      // Ask engaged users to review once per app open (the check itself is
+      // frequency-capped and no-ops for new/light users) — delayed so it
+      // never competes with the startup work above for the first frame.
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) maybeShowReviewPrompt(context, ref);
+      });
     });
 
     // Route live-notification action buttons (Add expense / Add income).
@@ -78,6 +108,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _updateSub?.cancel();
     super.dispose();
   }
 
@@ -137,13 +168,21 @@ class _HomeShellState extends ConsumerState<HomeShell>
     HomeWidgetService.update(
       repo: ref.read(transactionRepoProvider),
       currency: s.currency,
-      accentColor: s.accentColor,
     );
   }
 
+  // Remembers the last real tab (Home/Activity/Budgets/Profile) so the nav
+  // bar still shows a sensible selection while the AI screen (page 2, opened
+  // via the floating AI button, not a bar destination) is open.
+  int _lastMainTab = 0;
+
   void _openTab(int i) {
     Haptics.selection();
-    setState(() => _index = i);
+    setState(() {
+      _index = i;
+      _visitedTabs.add(i);
+      if (i != 2) _lastMainTab = i;
+    });
   }
 
   void _openActions() {
@@ -188,175 +227,63 @@ class _HomeShellState extends ConsumerState<HomeShell>
 
     return Scaffold(
       extendBody: true,
-      body: Stack(
+      body: IndexedStack(
+        index: _index,
         children: [
-          Positioned.fill(child: IndexedStack(index: _index, children: pages)),
-          // Floating pill navigation
-          Positioned(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            bottom: 0,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _FloatingNav(
-                  index: _index,
-                  onTap: _openTab,
-                  onAdd: _openActions,
-                ),
-              ),
-            ),
-          ),
-          // Round AI button on the right, floating clearly above the nav.
-          // Hidden on the AI screen so it never overlaps the message composer.
-          if (_index != 2)
-            Positioned(
-              right: AppSpacing.lg,
-              bottom: 0,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 92),
-                  child: _AiButton(onTap: () => _openTab(2)),
-                ),
-              ),
-            ),
+          for (var i = 0; i < pages.length; i++)
+            _visitedTabs.contains(i) ? pages[i] : const SizedBox.shrink(),
         ],
       ),
-    );
-  }
-}
-
-/// The floating navigation pill. Four destinations with a highlighted center
-/// add button.
-class _FloatingNav extends StatelessWidget {
-  final int index;
-  final ValueChanged<int> onTap;
-  final VoidCallback onAdd;
-
-  const _FloatingNav({
-    required this.index,
-    required this.onTap,
-    required this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 66,
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          _NavItem(
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home,
-              label: 'Home',
-              active: index == 0,
-              onTap: () => onTap(0)),
-          _NavItem(
-              icon: Icons.receipt_long_outlined,
-              activeIcon: Icons.receipt_long,
-              label: 'Activity',
-              active: index == 1,
-              onTap: () => onTap(1)),
-          // Center add button
-          Expanded(
-            child: Center(
-              child: GestureDetector(
-                onTap: onAdd,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: cs.primary,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(Icons.add, color: cs.onPrimary, size: 26),
-                ),
-              ),
+      // Hidden on the AI screen itself so it never overlaps the composer.
+      floatingActionButton: _index == 2
+          ? null
+          : FloatingActionButton(
+              heroTag: 'aiFab',
+              onPressed: () => _openTab(2),
+              child: const Icon(Icons.auto_awesome),
+            ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+        child: SafeArea(
+          top: false,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: NavigationBar(
+              height: 66,
+              selectedIndex: _index == 2 ? _lastMainTab : _index,
+              onDestinationSelected: (i) {
+                if (i == 2) {
+                  _openActions();
+                  return;
+                }
+                _openTab(i);
+              },
+              destinations: const [
+                NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home),
+                    label: 'Home'),
+                NavigationDestination(
+                    icon: Icon(Icons.receipt_long_outlined),
+                    selectedIcon: Icon(Icons.receipt_long),
+                    label: 'Activity'),
+                NavigationDestination(
+                    icon: Icon(Icons.add_circle_outline),
+                    selectedIcon: Icon(Icons.add_circle),
+                    label: 'Add'),
+                NavigationDestination(
+                    icon: Icon(Icons.savings_outlined),
+                    selectedIcon: Icon(Icons.savings),
+                    label: 'Budgets'),
+                NavigationDestination(
+                    icon: Icon(Icons.person_outline),
+                    selectedIcon: Icon(Icons.person),
+                    label: 'Profile'),
+              ],
             ),
           ),
-          _NavItem(
-              icon: Icons.savings_outlined,
-              activeIcon: Icons.savings,
-              label: 'Budgets',
-              active: index == 3,
-              onTap: () => onTap(3)),
-          _NavItem(
-              icon: Icons.person_outline,
-              activeIcon: Icons.person,
-              label: 'Profile',
-              active: index == 4,
-              onTap: () => onTap(4)),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final color = active ? cs.primary : cs.onSurfaceVariant;
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(active ? activeIcon : icon, color: color, size: 23),
-            const SizedBox(height: 3),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                    color: color)),
-          ],
         ),
-      ),
-    );
-  }
-}
-
-class _AiButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _AiButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: cs.primary,
-        ),
-        child: Icon(Icons.auto_awesome, color: cs.onPrimary, size: 26),
       ),
     );
   }

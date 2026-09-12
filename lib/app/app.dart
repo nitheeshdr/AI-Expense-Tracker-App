@@ -20,8 +20,8 @@ class AiExpenseApp extends ConsumerWidget {
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       title: 'AI Expense Tracker',
-      theme: AppThemeData.build(Brightness.light, seed: settings.accentColor),
-      darkTheme: AppThemeData.build(Brightness.dark, seed: settings.accentColor),
+      theme: AppThemeData.build(Brightness.light),
+      darkTheme: AppThemeData.build(Brightness.dark),
       themeMode: settings.materialThemeMode,
       builder: (context, child) =>
           _LockGate(child: child ?? const SizedBox.shrink()),

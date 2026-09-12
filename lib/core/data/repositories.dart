@@ -54,6 +54,14 @@ class TransactionRepository {
     return (income: income, expense: expense);
   }
 
+  /// Total number of logged transactions (used to gate the review prompt on
+  /// engaged users rather than asking on first launch).
+  Future<int> count() async {
+    final db = await AppDatabase.instance.database;
+    final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM transactions');
+    return (rows.first['c'] as num).toInt();
+  }
+
   Future<List<CategoryTotal>> byCategory(DateTime start, DateTime end,
       {TxnType type = TxnType.expense}) async {
     final db = await AppDatabase.instance.database;

@@ -87,22 +87,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   for (final s in _suggestions)
                     Padding(
                       padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: Pressable(
-                        onTap: () => _send(s),
-                        child: Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: c.accentSoft,
-                            borderRadius:
-                                BorderRadius.circular(AppRadii.pill),
-                            border: Border.all(
-                                color: c.accent.withValues(alpha: 0.25)),
-                          ),
-                          child: Text(s,
-                              style: AppType.caption.copyWith(color: c.accent)),
-                        ),
+                      child: ActionChip(
+                        label: Text(s),
+                        onPressed: () => _send(s),
                       ),
                     ),
                 ],
@@ -133,7 +120,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                     height: 52,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      gradient: c.accentGradient,
+                      color: c.accent,
                       borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: const Icon(Icons.arrow_upward,
@@ -163,7 +150,7 @@ class _Header extends ConsumerWidget {
             height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              gradient: c.accentGradient,
+              color: c.accent,
               borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: const Icon(Icons.auto_awesome,
@@ -243,8 +230,7 @@ class _Bubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               decoration: BoxDecoration(
-                gradient: isUser ? c.accentGradient : null,
-                color: isUser ? null : c.surface,
+                color: isUser ? c.accent : c.surface,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(AppRadii.lg),
                   topRight: const Radius.circular(AppRadii.lg),

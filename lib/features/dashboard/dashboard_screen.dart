@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/data/categories.dart';
 import '../../core/data/models.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/spacing.dart';
@@ -114,7 +115,8 @@ class _DashboardList extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
 
         // Hero net card — tap to see income vs expense breakdown
-        GestureDetector(
+        InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.xl),
           onTap: () => _showNetDetail(context, c),
           child: _HeroCard(summary: summary, settings: settings),
         ),
@@ -315,11 +317,9 @@ class _DashboardList extends ConsumerWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      for (final (i, cat)
-                          in summary.byCategory.take(5).indexed)
+                      for (final cat in summary.byCategory.take(5))
                         _LegendRow(
                             total: cat,
-                            index: i,
                             share: summary.expense <= 0
                                 ? 0
                                 : cat.total / summary.expense),
@@ -472,16 +472,13 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppTheme.of(context);
-    return Container(
+    return SizedBox(
       width: width,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: c.hairline),
+      child: Card(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.lg)),
+        child: Padding(padding: padding, child: child),
       ),
-      child: child,
     );
   }
 }
@@ -524,13 +521,13 @@ class _HeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final cur = settings.currency;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: cs.primary,
-        borderRadius: BorderRadius.circular(AppRadii.xl),
-      ),
-      child: Column(
+    return Card(
+      color: cs.primary,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.xl)),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Net this month',
@@ -576,6 +573,7 @@ class _HeroCard extends StatelessWidget {
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -743,35 +741,38 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
-    // Emphasized card inverts (ink surface) for an elegant mono highlight.
-    final bg = emphasized ? c.textPrimary : c.surface;
-    final fg = emphasized ? c.background : c.textPrimary;
+    // Emphasized card gets a warning-tinted container (this is only used for
+    // the "over budget" forecast) instead of a plain neutral surface.
+    final bg = emphasized ? c.warningContainer : c.surface;
+    final fg = emphasized ? c.onWarningContainer : c.textPrimary;
     final sub = emphasized
-        ? c.background.withValues(alpha: 0.7)
+        ? c.onWarningContainer.withValues(alpha: 0.75)
         : c.textTertiary;
-    return Container(
+    return SizedBox(
       width: 148,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
+      child: Card(
         color: bg,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: c.hairline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, size: 18, color: fg),
-          Text(value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.w800, color: fg)),
-          Text(label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10.5, color: sub)),
-        ],
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.lg)),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, size: 18, color: fg),
+              Text(value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w800, color: fg)),
+              Text(label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10.5, color: sub)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -906,29 +907,22 @@ class _FeatureGrid extends StatelessWidget {
       itemBuilder: (context, i) {
         final f = features[i];
         final c = AppTheme.of(context);
-        return InkWell(
-          onTap: f.onTap,
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: c.accentSoft,
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                ),
-                child: Icon(f.icon, color: c.accent, size: 24),
-              ),
-              const SizedBox(height: 6),
-              Text(f.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10.5, color: c.textSecondary)),
-            ],
-          ),
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton.filledTonal(
+              onPressed: f.onTap,
+              iconSize: 24,
+              style: IconButton.styleFrom(minimumSize: const Size(50, 50)),
+              icon: Icon(f.icon),
+            ),
+            const SizedBox(height: 6),
+            Text(f.label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 10.5, color: c.textSecondary)),
+          ],
         );
       },
     );
@@ -1025,15 +1019,13 @@ class _AiInsightCard extends StatelessWidget {
 
 class _LegendRow extends StatelessWidget {
   final CategoryTotal total;
-  final int index;
   final double share;
-  const _LegendRow(
-      {required this.total, required this.index, required this.share});
+  const _LegendRow({required this.total, required this.share});
 
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
-    final color = c.monoShade(index);
+    final color = Categories.of(total.category).color;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(

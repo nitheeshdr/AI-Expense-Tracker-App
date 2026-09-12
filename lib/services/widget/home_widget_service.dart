@@ -11,7 +11,6 @@ class HomeWidgetService {
   static Future<void> update({
     required TransactionRepository repo,
     required String currency,
-    required int accentColor,
   }) async {
     try {
       final now = DateTime.now();
@@ -32,8 +31,8 @@ class HomeWidgetService {
           'month', 'Spent $symbol${fmt(month.expense)}');
       await HomeWidget.saveWidgetData<String>(
           'income', 'Income $symbol${fmt(month.income)}');
-      // Monochrome app: the widget's Add button is always white (black text).
-      await HomeWidget.saveWidgetData<String>('accent', '#FFFFFFFF');
+      // App's single fixed accent — matches the violet/lavender theme.
+      await HomeWidget.saveWidgetData<String>('accent', '#FF6C5CE0');
       await HomeWidget.updateWidget(androidName: _androidName);
     } catch (_) {
       // Widget not added / platform unsupported — ignore.

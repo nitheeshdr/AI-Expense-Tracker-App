@@ -194,7 +194,7 @@ class ProfileScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 1.0.0 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 2.0.0 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),
