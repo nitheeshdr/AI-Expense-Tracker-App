@@ -174,28 +174,42 @@ class ProfileScreen extends ConsumerWidget {
           _GroupLabel('Privacy'),
           Card(
             child: Column(children: [
-              SwitchListTile(
-                secondary: const Icon(Icons.fingerprint),
+              ListTile(
+                leading: const Icon(Icons.fingerprint),
                 title: const Text('App lock'),
                 subtitle: const Text('Biometric / device credential on open'),
-                value: s.appLockEnabled,
-                onChanged: (v) => _toggleAppLock(context, ref, v),
+                trailing: Switch(
+                  activeThumbColor: cs.primary,
+                  value: s.appLockEnabled,
+                  onChanged: (v) => _toggleAppLock(context, ref, v),
+                ),
+                onTap: () => _toggleAppLock(context, ref, !s.appLockEnabled),
               ),
               const Divider(height: 1),
-              SwitchListTile(
-                secondary: const Icon(Icons.visibility_off_outlined),
+              ListTile(
+                leading: const Icon(Icons.visibility_off_outlined),
                 title: const Text('Hide balances'),
-                value: s.hideBalances,
-                onChanged: (v) =>
-                    ctrl.update((x) => x.copyWith(hideBalances: v)),
+                trailing: Switch(
+                  activeThumbColor: cs.primary,
+                  value: s.hideBalances,
+                  onChanged: (v) =>
+                      ctrl.update((x) => x.copyWith(hideBalances: v)),
+                ),
+                onTap: () =>
+                    ctrl.update((x) => x.copyWith(hideBalances: !s.hideBalances)),
               ),
               const Divider(height: 1),
-              SwitchListTile(
-                secondary: const Icon(Icons.vibration_outlined),
+              ListTile(
+                leading: const Icon(Icons.vibration_outlined),
                 title: const Text('Haptics'),
-                value: s.hapticsEnabled,
-                onChanged: (v) =>
-                    ctrl.update((x) => x.copyWith(hapticsEnabled: v)),
+                trailing: Switch(
+                  activeThumbColor: cs.primary,
+                  value: s.hapticsEnabled,
+                  onChanged: (v) =>
+                      ctrl.update((x) => x.copyWith(hapticsEnabled: v)),
+                ),
+                onTap: () => ctrl
+                    .update((x) => x.copyWith(hapticsEnabled: !s.hapticsEnabled)),
               ),
             ]),
           ),

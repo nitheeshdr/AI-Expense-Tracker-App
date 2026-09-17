@@ -112,3 +112,44 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 13. Rolling "latest build" release (every push to main) ───────────
+      # Separate from the versioned releases above (those only fire on a
+      # `v*` tag) — this one moves the `latest-build` tag to HEAD and
+      # re-uploads the APK/AAB on every single commit to main, so there's
+      # always a fresh, downloadable build without having to cut a version.
+      - name: Move latest-build tag to this commit
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git tag -f latest-build
+          git push -f origin latest-build
+
+      - name: Update rolling "latest build" release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-build
+          name: "Latest build (${{ env.VERSION }}, ${{ github.sha }})"
+          body: |
+            Automatically built from the most recent commit on `main`:
+            ${{ github.event.head_commit.message }}
+
+            Commit: ${{ github.sha }}
+
+            **This is a rolling, unreviewed build — it always points at the
+            tip of `main`, not a stable version.** For stable, versioned
+            releases see the other entries on the
+            [Releases page](../../releases).
+
+            ### Downloads
+            | File | Description |
+            |------|-------------|
+            | `ai-expense-tracker-*.apk` | Direct install APK (sideload) |
+            | `ai-expense-tracker-*.aab` | App Bundle for Play Store upload |
+          files: |
+            build/app/outputs/flutter-apk/ai-expense-tracker-*.apk
+            build/app/outputs/bundle/release/ai-expense-tracker-*.aab
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
