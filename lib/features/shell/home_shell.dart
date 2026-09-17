@@ -233,7 +233,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
       ProfileScreen(onBack: () => _openTab(_lastMainTab)),
     ];
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final bottomSafeInset = MediaQuery.paddingOf(context).bottom;
     const barHeight = 66.0;
@@ -285,20 +285,21 @@ class _HomeShellState extends ConsumerState<HomeShell>
             width: screenWidth - AppSpacing.lg * 2,
             height: barHeight,
             margin: const EdgeInsets.only(bottom: barBottomMargin),
-            style: LiquidGlassStyle(
-              appearance: LiquidGlassAppearance(
-                // A neutral frosted white/black glass (not theme-tinted)
-                // reads as a true glass pane over whatever's scrolled
-                // beneath it.
-                color: (isDark ? Colors.black : Colors.white)
-                    .withValues(alpha: isDark ? 0.35 : 0.55),
-                blur: const LiquidGlassBlur(sigmaX: 24, sigmaY: 24),
-                shadow: const LiquidGlassShadow(blur: 3.5, opacity: 0.18),
+            // Start from the package's own tuned pill look (its small
+            // shader blur + refraction is what makes it real glass, not
+            // a flat frosted rectangle) and only swap the tint. Uses an
+            // elevated container tone rather than `scheme.surface` —
+            // the Scaffold's own background is also `scheme.surface`
+            // (see AppThemeData), so tinting with that same color made
+            // the pill invisible against the page in dark mode.
+            style: LiquidGlassTabBar.defaultStyle.copyWith(
+              appearance: LiquidGlassTabBar.defaultStyle.appearance.copyWith(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.82),
               ),
             ),
             itemStyle: LiquidGlassTabItemStyle(
-              selectedColor: isDark ? Colors.white : const Color(0xFF1C1C1E),
-              unselectedColor: isDark ? Colors.white60 : Colors.black45,
+              selectedColor: scheme.onSurface,
+              unselectedColor: scheme.onSurfaceVariant,
             ),
             pillStyle:
                 const LiquidGlassTabPillStyle(mode: LiquidGlassPillMode.impellerOnly),
