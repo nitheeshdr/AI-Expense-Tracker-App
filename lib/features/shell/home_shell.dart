@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../app/providers.dart';
 import '../../core/design/spacing.dart';
@@ -233,8 +233,13 @@ class _HomeShellState extends ConsumerState<HomeShell>
       ProfileScreen(onBack: () => _openTab(_lastMainTab)),
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final bottomSafeInset = MediaQuery.paddingOf(context).bottom;
+    const barHeight = 66.0;
+    const barBottomMargin = AppSpacing.sm;
+
     return Scaffold(
-      extendBody: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -263,69 +268,72 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 ),
               ),
             ),
-        ],
-      ),
-      // Hidden on the AI screen itself so it never overlaps the composer.
-      floatingActionButton: _index == 2
-          ? null
-          : FloatingActionButton(
-              heroTag: 'aiFab',
-              onPressed: () => _openTab(2),
-              child: const Icon(Icons.auto_awesome),
-            ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-        child: SafeArea(
-          top: false,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            // Frosted-glass floating pill: blur what's behind it rather than
-            // an opaque fill, so scrolled content shows through softly.
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-              child: NavigationBar(
-              height: 66,
-              // A neutral frosted white/black glass (not theme-tinted) reads
-              // as a true glass pane over whatever's scrolled beneath it.
-              backgroundColor: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black
-                      : Colors.white)
-                  .withValues(alpha: 0.6),
-              selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
-              onDestinationSelected: (i) {
-                if (i == 2) {
-                  _openActions();
-                  return;
-                }
-                _openTab(i);
-              },
-              destinations: const [
-                NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Home'),
-                NavigationDestination(
-                    icon: Icon(Icons.receipt_long_outlined),
-                    selectedIcon: Icon(Icons.receipt_long),
-                    label: 'Activity'),
-                NavigationDestination(
-                    icon: Icon(Icons.add_circle_outline),
-                    selectedIcon: Icon(Icons.add_circle),
-                    label: 'Add'),
-                NavigationDestination(
-                    icon: Icon(Icons.savings_outlined),
-                    selectedIcon: Icon(Icons.savings),
-                    label: 'Budgets'),
-                NavigationDestination(
-                    icon: Icon(Icons.storefront_outlined),
-                    selectedIcon: Icon(Icons.storefront),
-                    label: 'Merchants'),
-              ],
+          // Hidden on the AI screen itself so it never overlaps the composer.
+          if (_index != 2)
+            Positioned(
+              right: AppSpacing.lg,
+              bottom: bottomSafeInset + barBottomMargin + barHeight + AppSpacing.md,
+              child: FloatingActionButton(
+                heroTag: 'aiFab',
+                onPressed: () => _openTab(2),
+                child: const Icon(Icons.auto_awesome),
               ),
             ),
+          // Real liquid-glass floating pill: refracts the live backdrop
+          // (Impeller) instead of a plain frosted blur.
+          LiquidGlassTabBar.withImpeller(
+            width: screenWidth - AppSpacing.lg * 2,
+            height: barHeight,
+            margin: const EdgeInsets.only(bottom: barBottomMargin),
+            style: LiquidGlassStyle(
+              appearance: LiquidGlassAppearance(
+                // A neutral frosted white/black glass (not theme-tinted)
+                // reads as a true glass pane over whatever's scrolled
+                // beneath it.
+                color: (isDark ? Colors.black : Colors.white)
+                    .withValues(alpha: isDark ? 0.35 : 0.55),
+                blur: const LiquidGlassBlur(sigmaX: 24, sigmaY: 24),
+                shadow: const LiquidGlassShadow(blur: 3.5, opacity: 0.18),
+              ),
+            ),
+            itemStyle: LiquidGlassTabItemStyle(
+              selectedColor: isDark ? Colors.white : const Color(0xFF1C1C1E),
+              unselectedColor: isDark ? Colors.white60 : Colors.black45,
+            ),
+            pillStyle:
+                const LiquidGlassTabPillStyle(mode: LiquidGlassPillMode.impellerOnly),
+            selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
+            onChanged: (i) {
+              if (i == 2) {
+                _openActions();
+                return;
+              }
+              _openTab(i);
+            },
+            items: const [
+              LiquidGlassTabBarItem(
+                  icon: Icons.home_outlined,
+                  selectedIcon: Icons.home,
+                  label: 'Home'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.receipt_long_outlined,
+                  selectedIcon: Icons.receipt_long,
+                  label: 'Activity'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.add_circle_outline,
+                  selectedIcon: Icons.add_circle,
+                  label: 'Add'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.savings_outlined,
+                  selectedIcon: Icons.savings,
+                  label: 'Budgets'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.storefront_outlined,
+                  selectedIcon: Icons.storefront,
+                  label: 'Merchants'),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
