@@ -132,6 +132,30 @@ final allTransactionsProvider =
   return ref.watch(transactionRepoProvider).all();
 });
 
+/// Every merchant ever transacted with, for the Merchants tab.
+final allMerchantsProvider = FutureProvider<List<MerchantSummary>>((ref) async {
+  ref.watch(dataRevisionProvider);
+  return ref.watch(transactionRepoProvider).allMerchants();
+});
+
+/// One merchant's full detail (summary + every transaction), for the
+/// merchant detail page.
+class MerchantDetail {
+  final MerchantSummary summary;
+  final List<TransactionEntity> transactions;
+  const MerchantDetail({required this.summary, required this.transactions});
+}
+
+final merchantDetailProvider =
+    FutureProvider.family<MerchantDetail?, String>((ref, merchant) async {
+  ref.watch(dataRevisionProvider);
+  final repo = ref.watch(transactionRepoProvider);
+  final summary = await repo.merchantSummary(merchant);
+  if (summary == null) return null;
+  final transactions = await repo.transactionsForMerchant(merchant);
+  return MerchantDetail(summary: summary, transactions: transactions);
+});
+
 final subscriptionsProvider =
     FutureProvider<List<SubscriptionItem>>((ref) async {
   ref.watch(dataRevisionProvider);

@@ -15,7 +15,13 @@ import 'about_screen.dart';
 import 'groq_key_sheet.dart';
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+  /// Called when the back arrow is tapped. Profile is reached via a
+  /// floating button that swaps the shell's tab index rather than a
+  /// Navigator push, so there's no automatic back button — pass this to
+  /// return to whichever tab opened it. Omit for a plain title (e.g. if
+  /// Profile is ever hosted as a real navigable route instead).
+  final VoidCallback? onBack;
+  const ProfileScreen({super.key, this.onBack});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,7 +33,16 @@ class ProfileScreen extends ConsumerWidget {
     final hasKey = (keyAsync.value ?? '').isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        centerTitle: false,
+        leading: onBack == null
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+              ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 110),
@@ -194,7 +209,7 @@ class ProfileScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 2.0.0 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 2.1.0 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),

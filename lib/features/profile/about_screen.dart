@@ -21,6 +21,13 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.0', 'Sep 2026', [
+    'Merchants tab: every merchant you\'ve ever transacted with, searchable, with total sent/received',
+    'Per-merchant report: transaction count, total sent, total received, net, and the full transaction history',
+    'Mutual Funds investment tracking on the Budgets tab',
+    'New blue Material 3 color theme with a frosted-glass floating nav bar',
+    'Profile moved to a floating button shown only on Home, to make room for Merchants in the nav bar',
+  ]),
   _Release('2.0.0', 'Sep 2026', [
     'Material 3 Expressive redesign: native color scheme, cards, chips, nav bar',
     'Fixed a crash when granting the notification permission on first launch',
@@ -91,7 +98,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.0.0 (build 3)',
+                Text('Version 2.1.0 (build 5)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -129,7 +136,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.0.0',
+                  applicationVersion: '2.1.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

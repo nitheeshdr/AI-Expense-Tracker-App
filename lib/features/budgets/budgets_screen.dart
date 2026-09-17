@@ -101,6 +101,42 @@ class BudgetsScreen extends ConsumerWidget {
           const NativeAdCard(),
           const SizedBox(height: AppSpacing.lg),
 
+          // Investments (auto-tracked from SMS/manual entries tagged Mutual
+          // Funds — shown even without a budget cap set for the category).
+          const SectionHeader(title: 'Investments'),
+          Consumer(
+            builder: (context, ref, _) {
+              final invested =
+                  ref.watch(_categorySpentProvider('Mutual Funds')).value ?? 0;
+              return GlassCard(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  children: [
+                    const CategoryIcon(category: 'Mutual Funds', size: 42),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Mutual Funds',
+                              style: AppType.h3.copyWith(
+                                  color: c.textPrimary, fontSize: 15)),
+                          Text('This month',
+                              style: AppType.caption
+                                  .copyWith(color: c.textTertiary)),
+                        ],
+                      ),
+                    ),
+                    Text(Money.format(invested, code: cur),
+                        style: AppType.numericMedium
+                            .copyWith(fontSize: 15, color: c.textPrimary)),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
           // Subscriptions & autopay
           const SectionHeader(title: 'Subscriptions & autopay'),
           subscriptions.when(

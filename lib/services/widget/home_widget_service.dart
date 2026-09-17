@@ -31,8 +31,8 @@ class HomeWidgetService {
           'month', 'Spent $symbol${fmt(month.expense)}');
       await HomeWidget.saveWidgetData<String>(
           'income', 'Income $symbol${fmt(month.income)}');
-      // App's single fixed accent — matches the violet/lavender theme.
-      await HomeWidget.saveWidgetData<String>('accent', '#FF6C5CE0');
+      // App's single fixed accent — matches the blue theme.
+      await HomeWidget.saveWidgetData<String>('accent', '#FF2F7CF6');
       await HomeWidget.updateWidget(androidName: _androidName);
     } catch (_) {
       // Widget not added / platform unsupported — ignore.

@@ -233,6 +233,24 @@ class DayTotal {
   const DayTotal(this.day, this.total);
 }
 
+/// Per-merchant aggregate: how much has been sent to / received from a
+/// merchant across every transaction, and how often.
+class MerchantSummary {
+  final String merchant;
+  final double sent;
+  final double received;
+  final int count;
+  final DateTime lastDate;
+  const MerchantSummary({
+    required this.merchant,
+    required this.sent,
+    required this.received,
+    required this.count,
+    required this.lastDate,
+  });
+  double get net => received - sent;
+}
+
 /// A detected recurring bill / subscription / autopay mandate.
 class SubscriptionItem {
   final String merchant;

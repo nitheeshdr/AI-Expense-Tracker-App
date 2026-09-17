@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,12 +21,14 @@ import '../ai_assistant/ai_assistant_screen.dart';
 import '../budgets/budgets_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../profile/profile_screen.dart';
+import '../merchants/merchants_screen.dart';
 import '../sms_import/sms_import_controller.dart';
 import '../sms_import/sms_import_sheet.dart';
 import '../transactions/transactions_screen.dart';
 
 /// Shell with a floating pill navigation bar (Home / Activity / + / Budgets /
-/// Profile) and a separate round AI button floating on the right.
+/// Merchants), a floating AI button bottom-right, and a floating Profile
+/// button top-right.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -176,12 +179,16 @@ class _HomeShellState extends ConsumerState<HomeShell>
   // via the floating AI button, not a bar destination) is open.
   int _lastMainTab = 0;
 
+  // Page 2 (AI) and page 5 (Profile) are reached via floating buttons, not
+  // the nav bar, so neither should be treated as the bar's "selected" tab.
+  static bool _isSideTab(int i) => i == 2 || i == 5;
+
   void _openTab(int i) {
     Haptics.selection();
     setState(() {
       _index = i;
       _visitedTabs.add(i);
-      if (i != 2) _lastMainTab = i;
+      if (!_isSideTab(i)) _lastMainTab = i;
     });
   }
 
@@ -222,16 +229,40 @@ class _HomeShellState extends ConsumerState<HomeShell>
       const TransactionsScreen(),
       const AiAssistantScreen(),
       const BudgetsScreen(),
-      const ProfileScreen(),
+      const MerchantsScreen(),
+      ProfileScreen(onBack: () => _openTab(_lastMainTab)),
     ];
 
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(
-        index: _index,
+      body: Stack(
         children: [
-          for (var i = 0; i < pages.length; i++)
-            _visitedTabs.contains(i) ? pages[i] : const SizedBox.shrink(),
+          Positioned.fill(
+            child: IndexedStack(
+              index: _index,
+              children: [
+                for (var i = 0; i < pages.length; i++)
+                  _visitedTabs.contains(i) ? pages[i] : const SizedBox.shrink(),
+              ],
+            ),
+          ),
+          // Profile now lives here instead of the nav bar, floating
+          // top-right — only on the Home tab, not sticky across every tab.
+          if (_index == 0)
+            Positioned(
+              top: 0,
+              right: AppSpacing.lg,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: IconButton.filledTonal(
+                    onPressed: () => _openTab(5),
+                    icon: const Icon(Icons.person_outline),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
       // Hidden on the AI screen itself so it never overlaps the composer.
@@ -249,9 +280,19 @@ class _HomeShellState extends ConsumerState<HomeShell>
           top: false,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(999),
-            child: NavigationBar(
+            // Frosted-glass floating pill: blur what's behind it rather than
+            // an opaque fill, so scrolled content shows through softly.
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: NavigationBar(
               height: 66,
-              selectedIndex: _index == 2 ? _lastMainTab : _index,
+              // A neutral frosted white/black glass (not theme-tinted) reads
+              // as a true glass pane over whatever's scrolled beneath it.
+              backgroundColor: (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black
+                      : Colors.white)
+                  .withValues(alpha: 0.6),
+              selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
               onDestinationSelected: (i) {
                 if (i == 2) {
                   _openActions();
@@ -277,10 +318,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
                     selectedIcon: Icon(Icons.savings),
                     label: 'Budgets'),
                 NavigationDestination(
-                    icon: Icon(Icons.person_outline),
-                    selectedIcon: Icon(Icons.person),
-                    label: 'Profile'),
+                    icon: Icon(Icons.storefront_outlined),
+                    selectedIcon: Icon(Icons.storefront),
+                    label: 'Merchants'),
               ],
+              ),
             ),
           ),
         ),

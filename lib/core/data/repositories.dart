@@ -113,6 +113,58 @@ class TransactionRepository {
     return (rows.first['total'] as num).toDouble();
   }
 
+  /// Every merchant the user has ever transacted with, with total sent
+  /// (expense), received (income), and how many transactions — for the
+  /// Merchants tab. Sorted by total activity (sent + received) descending.
+  Future<List<MerchantSummary>> allMerchants() async {
+    final db = await AppDatabase.instance.database;
+    final rows = await db.rawQuery('''
+      SELECT merchant,
+             COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS sent,
+             COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS received,
+             COUNT(*) AS cnt,
+             MAX(date) AS last
+      FROM transactions
+      GROUP BY merchant
+      ORDER BY (sent + received) DESC
+    ''');
+    return rows.map((r) => _merchantFromRow(r)).toList();
+  }
+
+  /// Full detail for one merchant (null if they have no transactions).
+  Future<MerchantSummary?> merchantSummary(String merchant) async {
+    final db = await AppDatabase.instance.database;
+    final rows = await db.rawQuery('''
+      SELECT merchant,
+             COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS sent,
+             COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS received,
+             COUNT(*) AS cnt,
+             MAX(date) AS last
+      FROM transactions
+      WHERE merchant = ?
+      GROUP BY merchant
+    ''', [merchant]);
+    if (rows.isEmpty) return null;
+    return _merchantFromRow(rows.first);
+  }
+
+  MerchantSummary _merchantFromRow(Map<String, Object?> r) => MerchantSummary(
+        merchant: r['merchant'] as String,
+        sent: (r['sent'] as num).toDouble(),
+        received: (r['received'] as num).toDouble(),
+        count: (r['cnt'] as num).toInt(),
+        lastDate: DateTime.fromMillisecondsSinceEpoch(r['last'] as int),
+      );
+
+  /// Every transaction with a given merchant, newest first.
+  Future<List<TransactionEntity>> transactionsForMerchant(
+      String merchant) async {
+    final db = await AppDatabase.instance.database;
+    final rows = await db.query('transactions',
+        where: 'merchant = ?', whereArgs: [merchant], orderBy: 'date DESC');
+    return rows.map(TransactionEntity.fromMap).toList();
+  }
+
   /// Top expense merchants for a date range, by total spend.
   Future<List<CategoryTotal>> topMerchants(DateTime start, DateTime end,
       {int limit = 5}) async {
