@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.2', 'Sep 2026', [
+    'Real liquid-glass look for the floating nav bar, sheets, dialogs, and status filters',
+    'Fixed the app always returning to the last-open screen after being backgrounded — it now reopens on Home',
+  ]),
   _Release('2.1.1', 'Sep 2026', [
     'Edge-to-edge display fixed for Android 15+ (Play Console pre-launch check)',
     'R8 optimized resource shrinking enabled for a smaller, faster install',
@@ -102,7 +106,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.1 (build 6)',
+                Text('Version 2.1.2 (build 7)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -140,7 +144,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.1',
+                  applicationVersion: '2.1.2',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
