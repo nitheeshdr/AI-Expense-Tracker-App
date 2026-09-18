@@ -1,29 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../design/app_theme.dart';
 import '../design/spacing.dart';
 
-/// Presents a Material 3 modal bottom sheet (rounded, draggable, scrollable).
+/// Presents a liquid-glass modal bottom sheet (rounded, draggable,
+/// scrollable). `showLiquidGlassSheet` is Flutter's own
+/// `showModalBottomSheet` underneath — same route, drag and dismissal —
+/// with a `LiquidGlassSheet` standing in for the sheet's usual filled
+/// Material surface.
 Future<T?> showAppSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
   bool dismissible = true,
 }) {
-  return showModalBottomSheet<T>(
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return showLiquidGlassSheet<T>(
     context: context,
     isScrollControlled: true,
     isDismissible: dismissible,
     enableDrag: dismissible,
-    showDragHandle: true,
     useSafeArea: true,
-    builder: (context) => Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.xl,
-        right: AppSpacing.xl,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+    padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl),
+    style: LiquidGlassStyle(
+      appearance: LiquidGlassAppearance(
+        color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.82),
+        blur: const LiquidGlassBlur(sigmaX: 16, sigmaY: 16),
+        shadow: const LiquidGlassShadow(blur: 12, opacity: 0.16),
       ),
-      child: builder(context),
+      refraction: const LiquidGlassRefraction(distortion: 0.05, distortionWidth: 22),
     ),
+    builder: builder,
   );
 }
 
@@ -52,7 +60,7 @@ class SheetHeader extends StatelessWidget {
   }
 }
 
-/// Material confirm dialog. Returns true if confirmed.
+/// Liquid-glass confirm dialog. Returns true if confirmed.
 Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
@@ -61,9 +69,10 @@ Future<bool> showConfirmDialog(
   bool destructive = false,
 }) async {
   final c = AppColors.of(context);
-  final result = await showDialog<bool>(
+  final scheme = Theme.of(context).colorScheme;
+  final result = await showLiquidGlassDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => LiquidGlassAlertDialog(
       title: Text(title),
       content: Text(message),
       actions: [
@@ -71,12 +80,16 @@ Future<bool> showConfirmDialog(
           onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
-        FilledButton(
+        LiquidGlassButton(
+          label: confirmLabel,
           onPressed: () => Navigator.of(context).pop(true),
-          style: destructive
-              ? FilledButton.styleFrom(backgroundColor: c.expense)
-              : null,
-          child: Text(confirmLabel),
+          height: 40,
+          style: LiquidGlassButton.defaultStyle.copyWith(
+            appearance: LiquidGlassButton.defaultStyle.appearance.copyWith(
+              color: destructive ? c.expense : scheme.primary,
+            ),
+          ),
+          foregroundColor: Colors.white,
         ),
       ],
     ),

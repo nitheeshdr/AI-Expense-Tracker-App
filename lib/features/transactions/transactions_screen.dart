@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../app/providers.dart';
 import '../../core/data/models.dart';
@@ -298,13 +299,30 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: active,
-      onSelected: (_) {
+    final scheme = Theme.of(context).colorScheme;
+    final c = AppTheme.of(context);
+    // Safe as liquid glass: this row sits in the screen's fixed header,
+    // above the scrollable transaction list — not moving during scroll,
+    // unlike the horizontally-scrolling _CategoryStrip chips below it
+    // (kept as plain Material for that reason).
+    return LiquidGlassButton(
+      onPressed: () {
         Haptics.selection();
         onTap();
       },
+      label: label,
+      height: 36,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      foregroundColor: active ? Colors.white : c.textPrimary,
+      style: LiquidGlassButton.defaultStyle.copyWith(
+        appearance: LiquidGlassButton.defaultStyle.appearance.copyWith(
+          color: active
+              ? scheme.primary.withValues(alpha: 0.92)
+              : c.surfaceElevated,
+          blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        ),
+      ),
     );
   }
 }

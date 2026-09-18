@@ -174,6 +174,11 @@ class ProfileScreen extends ConsumerWidget {
           _GroupLabel('Privacy'),
           Card(
             child: Column(children: [
+              // Plain Material Switch, not LiquidGlassSwitch: these rows
+              // scroll as part of the screen's Column/ListView, and any
+              // liquid_glass_easy widget moving during scroll turns solid
+              // black (confirmed on-device). Glass stays on fixed-position
+              // UI only (nav bar, FABs, sheets/dialogs).
               ListTile(
                 leading: const Icon(Icons.fingerprint),
                 title: const Text('App lock'),

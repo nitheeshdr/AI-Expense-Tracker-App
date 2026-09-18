@@ -910,6 +910,12 @@ class _FeatureGrid extends StatelessWidget {
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Deliberately plain Material, not LiquidGlassButton: this
+            // grid scrolls as part of the Dashboard's ListView, and any
+            // liquid_glass_easy widget whose screen position moves during
+            // scroll turns solid black (confirmed on-device, independent
+            // of blur/style — the same failure GlassCard hit). Glass
+            // stays on fixed-position UI only (nav bar, FABs, sheets).
             IconButton.filledTonal(
               onPressed: f.onTap,
               iconSize: 24,

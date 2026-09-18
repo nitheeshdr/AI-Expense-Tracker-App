@@ -42,6 +42,10 @@ class BudgetsScreen extends ConsumerWidget {
             children: [
               Text('Budgets',
                   style: AppType.h1.copyWith(color: c.textPrimary)),
+              // Plain Material, not LiquidGlassButton: this row scrolls
+              // as part of the screen's ListView, and any liquid_glass_easy
+              // widget moving during scroll turns solid black (confirmed
+              // on-device). Glass stays on fixed-position UI only.
               IconButton.filledTonal(
                 onPressed: () => showBudgetEditor(context, ref),
                 icon: const Icon(Icons.add),

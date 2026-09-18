@@ -6,6 +6,12 @@ import '../design/spacing.dart';
 /// Material 3 surface card. Retains the original constructor surface so screens
 /// compile unchanged. Renders as a tonal container with rounded corners and an
 /// optional gradient (used for hero cards).
+///
+/// Deliberately NOT `liquid_glass_easy`: a `LiquidGlassLens` here turned
+/// solid black while scrolling on Budgets/Merchants (both use this inside
+/// a scrolling list) — real-time backdrop blur under continuous scroll is
+/// a much harder case than the nav bar's near-static position, and it
+/// failed outright. Reverted rather than chased further.
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;

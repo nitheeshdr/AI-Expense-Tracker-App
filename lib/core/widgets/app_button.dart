@@ -6,6 +6,13 @@ enum AppButtonKind { primary, secondary, ghost }
 
 /// Material 3 button. [leadingEmoji] is accepted for back-compat but ignored
 /// (no emoji); pass [icon] for a Material leading icon instead.
+///
+/// Deliberately NOT `liquid_glass_easy`: this button is used inside
+/// scrolling sheets/screens in several places, and any liquid_glass_easy
+/// widget whose screen position moves during scroll turns solid black
+/// (confirmed on-device — the same failure GlassCard and the Explore/
+/// Budgets icon buttons hit). Glass stays on fixed-position UI only (the
+/// nav bar, the FABs, and sheet/dialog surfaces, which don't move).
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;

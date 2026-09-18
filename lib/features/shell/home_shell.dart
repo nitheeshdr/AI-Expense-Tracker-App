@@ -148,6 +148,17 @@ class _HomeShellState extends ConsumerState<HomeShell>
     // SMS received in the meantime so the data is always current.
     if (state == AppLifecycleState.resumed) {
       ref.read(smsImportProvider.notifier).silentSync();
+      // Returning from the background (phone home / app switcher / another
+      // app) always lands back on the Home tab, regardless of which
+      // screen was open when the app was backgrounded. Not `_openTab`:
+      // this isn't a user tap, so no selection haptic.
+      if (_index != 0 && mounted) {
+        setState(() {
+          _index = 0;
+          _visitedTabs.add(0);
+          _lastMainTab = 0;
+        });
+      }
     }
   }
 
@@ -282,6 +293,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
           ),
           // Profile now lives here instead of the nav bar, floating
           // top-right — only on the Home tab, not sticky across every tab.
+          // Fixed screen position (not scrolling with page content), same
+          // as the nav bar's own stable LiquidGlassLens — unlike GlassCard
+          // (reverted after turning black mid-scroll), a glass surface
+          // that stays put while content scrolls behind it has been solid
+          // all session.
           if (_index == 0)
             Positioned(
               top: 0,
@@ -290,9 +306,19 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 bottom: false,
                 child: Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.sm),
-                  child: IconButton.filledTonal(
+                  child: LiquidGlassFab(
+                    heroTag: 'profileFab',
+                    size: 44,
                     onPressed: () => _openTab(5),
-                    icon: const Icon(Icons.person_outline),
+                    icon: Icons.person_outline,
+                    foregroundColor:
+                        isDark ? Colors.white70 : const Color(0xFF121215),
+                    style: LiquidGlassFab.defaultStyle.copyWith(
+                      appearance: LiquidGlassFab.defaultStyle.appearance
+                          .copyWith(
+                              color: (isDark ? Colors.black : Colors.white)
+                                  .withValues(alpha: 0.72)),
+                    ),
                   ),
                 ),
               ),
@@ -302,10 +328,18 @@ class _HomeShellState extends ConsumerState<HomeShell>
             Positioned(
               right: AppSpacing.lg,
               bottom: bottomSafeInset + barBottomMargin + barHeight + AppSpacing.md,
-              child: FloatingActionButton(
+              child: LiquidGlassFab(
                 heroTag: 'aiFab',
                 onPressed: () => _openTab(2),
-                child: const Icon(Icons.auto_awesome),
+                icon: Icons.auto_awesome,
+                foregroundColor: scheme.primary,
+                style: LiquidGlassFab.defaultStyle.copyWith(
+                  appearance: LiquidGlassFab.defaultStyle.appearance.copyWith(
+                    color: (isDark ? Colors.black : Colors.white)
+                        .withValues(alpha: 0.72),
+                    blur: const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
+                  ),
+                ),
               ),
             ),
           // Two components, stacked:
