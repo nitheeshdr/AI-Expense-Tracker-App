@@ -38,6 +38,11 @@ import '../transactions/transactions_screen.dart';
 LiquidGlassShape _navPillShape(double cornerRadius) =>
     LiquidGlassShape.continuousRoundedRectangle(
       cornerRadius: cornerRadius,
+      // Matches the package's own tab_bar_page.dart example exactly —
+      // confirmed clean/artifact-free on this device when hosted the
+      // package's intended way. `exact` hugs a continuous corner more
+      // closely than the cheaper default circular-rect clip.
+      clipQuality: LiquidGlassClipQuality.exact,
       borderWidth: 0.7,
       lightIntensity: 0.9,
       lightDirection: 62,
@@ -303,101 +308,108 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 child: const Icon(Icons.auto_awesome),
               ),
             ),
-          // Real liquid glass — refracts the live app content behind it
-          // (Impeller's backdrop, no captured body needed).
+          // Two components, stacked:
           //
-          // Deliberately the PLAIN `LiquidGlassTabBar(...)`, not
-          // `.withImpeller`. Every `.withImpeller` variant tried in this
-          // exact spot — the tab-bar example's own tuned refraction, a
-          // heavier blur (40) with a lower neutral alpha (0.56/0.62), a
-          // fully custom shape/border/shadow at alpha 0.72-0.85 — either
-          // produced a broken diagonal render artifact or, like the
-          // heavy-blur/low-alpha attempt, rendered so faint it blended
-          // into the Dashboard's "Explore" icon row directly above the
-          // bar and became illegible. `.withImpeller`'s full-screen
-          // overlay architecture is the common factor across all of
-          // those, not any particular style value. This plain
-          // constructor (a single small bounded lens, tap-only — no
-          // press-and-hold-to-drag between tabs, that gesture lives only
-          // in the `.withImpeller` pipeline) is the one configuration
-          // that has rendered cleanly and legibly across repeated
-          // on-device verification.
+          // 1. Background only — a plain `LiquidGlassLens` shaped like the
+          //    bar, no items at all. This exact style (shape/blur/color)
+          //    is the one configuration that has reliably rendered a
+          //    clean, visible capsule on this device across the whole
+          //    session; the plain `LiquidGlassTabBar`'s own icon-drawing
+          //    is skipped entirely here so there is nothing for the real
+          //    bar below to duplicate.
           Positioned(
             left: 0,
             right: 0,
             bottom: barBottomMargin + bottomSafeInset,
             child: Center(
-              child: LiquidGlassTabBar(
+              child: SizedBox(
                 width: barWidth,
                 height: barHeight,
-                style: LiquidGlassStyle(
-                  shape: _navPillShape(barHeight / 2),
-                  appearance: LiquidGlassAppearance(
-                    color: (isDark ? Colors.black : Colors.white)
-                        .withValues(alpha: 0.72),
-                    blur: const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
-                    shadow: const LiquidGlassShadow(blur: 9, opacity: 0.13),
-                  ),
-                  refraction: const LiquidGlassRefraction(
-                    distortion: 0.06,
-                    distortionWidth: 26,
-                  ),
-                ),
-                itemStyle: LiquidGlassTabItemStyle(
-                  selectedColor: scheme.primary,
-                  unselectedColor:
-                      isDark ? Colors.white70 : const Color(0xFF121215),
-                  selectedFontWeight: FontWeight.w700,
-                ),
-                // A sliding highlight bubble behind the selected tab.
-                // This is the FLAT pill path (`AnimatedBottomNavBarContent`
-                // — a plain `AnimationController` + `CustomPaint`, no
-                // shader, no backdrop capture), completely separate from
-                // the glass-refracting morph pill that only exists on
-                // `.withImpeller` (confirmed unstable on this device —
-                // see the note above the bar). Safe to animate.
-                pillStyle: LiquidGlassTabPillStyle(
-                  show: true,
-                  animated: true,
-                  rest: LiquidGlassStyle(
-                    shape: _navPillShape(28),
-                    appearance: const LiquidGlassAppearance(
-                      color: Color(0x2EAEAEB2),
+                child: LiquidGlassLens(
+                  style: LiquidGlassStyle(
+                    shape: _navPillShape(barHeight / 2),
+                    appearance: LiquidGlassAppearance(
+                      color: (isDark ? Colors.black : Colors.white)
+                          .withValues(alpha: 0.72),
+                      blur: const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
+                      shadow: const LiquidGlassShadow(blur: 9, opacity: 0.13),
+                    ),
+                    refraction: const LiquidGlassRefraction(
+                      distortion: 0.06,
+                      distortionWidth: 26,
                     ),
                   ),
                 ),
-                selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
-                onChanged: (i) {
-                  if (i == 2) {
-                    _openActions();
-                    return;
-                  }
-                  _openTab(i);
-                },
-                items: const [
-                  LiquidGlassTabBarItem(
-                      icon: Icons.home_outlined,
-                      selectedIcon: Icons.home,
-                      label: 'Home'),
-                  LiquidGlassTabBarItem(
-                      icon: Icons.receipt_long_outlined,
-                      selectedIcon: Icons.receipt_long,
-                      label: 'Activity'),
-                  LiquidGlassTabBarItem(
-                      icon: Icons.add_circle_outline,
-                      selectedIcon: Icons.add_circle,
-                      label: 'Add'),
-                  LiquidGlassTabBarItem(
-                      icon: Icons.savings_outlined,
-                      selectedIcon: Icons.savings,
-                      label: 'Budgets'),
-                  LiquidGlassTabBarItem(
-                      icon: Icons.storefront_outlined,
-                      selectedIcon: Icons.storefront,
-                      label: 'Merchants'),
-                ],
               ),
             ),
+          ),
+          // 2. The package's real, proper nav bar — actual icons, labels,
+          // selection and the genuine drag-capable glass pill
+          // (`pillStyle.mode: impellerOnly`). Its OWN capsule is set to a
+          // near-invisible fill (not exactly transparent — a true 0-alpha
+          // fill was what produced color-fringed corruption in testing)
+          // so component 1 above is the only visible background and
+          // there is no double capsule.
+          LiquidGlassTabBar.withImpeller(
+            width: barWidth,
+            height: barHeight,
+            // No `+ bottomSafeInset` here: `.withImpeller`'s own build()
+            // adds `MediaQuery.of(context).padding.bottom` automatically
+            // (matching the package's own demo note — "the scaffold adds
+            // the safe-area inset on top of this"), so including it twice
+            // pushed this component higher than component 1, visibly
+            // misaligning the two.
+            margin: EdgeInsets.only(bottom: barBottomMargin),
+            style: LiquidGlassStyle(
+              shape: _navPillShape(barHeight / 2),
+              appearance: LiquidGlassAppearance(
+                color: (isDark ? Colors.black : Colors.white)
+                    .withValues(alpha: 0.02),
+                blur: const LiquidGlassBlur(sigmaX: 0.01, sigmaY: 0.01),
+              ),
+            ),
+            itemStyle: LiquidGlassTabItemStyle(
+              selectedColor: scheme.primary,
+              unselectedColor: isDark ? Colors.white70 : const Color(0xFF121215),
+              selectedFontWeight: FontWeight.w700,
+            ),
+            pillStyle: LiquidGlassTabPillStyle(
+              mode: LiquidGlassPillMode.impellerOnly,
+              rest: LiquidGlassStyle(
+                shape: _navPillShape(28),
+                appearance: const LiquidGlassAppearance(color: Color(0x2EAEAEB2)),
+              ),
+            ),
+            selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
+            onChanged: (i) {
+              if (i == 2) {
+                _openActions();
+                return;
+              }
+              _openTab(i);
+            },
+            items: const [
+              LiquidGlassTabBarItem(
+                  icon: Icons.home_outlined,
+                  selectedIcon: Icons.home,
+                  label: 'Home'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.receipt_long_outlined,
+                  selectedIcon: Icons.receipt_long,
+                  label: 'Activity'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.add_circle_outline,
+                  selectedIcon: Icons.add_circle,
+                  label: 'Add'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.savings_outlined,
+                  selectedIcon: Icons.savings,
+                  label: 'Budgets'),
+              LiquidGlassTabBarItem(
+                  icon: Icons.storefront_outlined,
+                  selectedIcon: Icons.storefront,
+                  label: 'Merchants'),
+            ],
           ),
         ],
       ),
