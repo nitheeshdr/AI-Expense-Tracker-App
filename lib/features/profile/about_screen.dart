@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.1', 'Sep 2026', [
+    'Edge-to-edge display fixed for Android 15+ (Play Console pre-launch check)',
+    'R8 optimized resource shrinking enabled for a smaller, faster install',
+  ]),
   _Release('2.1.0', 'Sep 2026', [
     'Merchants tab: every merchant you\'ve ever transacted with, searchable, with total sent/received',
     'Per-merchant report: transaction count, total sent, total received, net, and the full transaction history',
@@ -98,7 +102,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.0 (build 5)',
+                Text('Version 2.1.1 (build 6)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -136,7 +140,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.0',
+                  applicationVersion: '2.1.1',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

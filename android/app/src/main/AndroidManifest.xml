@@ -64,5 +64,21 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Without this, url_launcher's canLaunchUrl() returns false for
+             every https:// URL on Android 11+ (package visibility), so
+             "Rate the app", the Play Store fallback, and the About page's
+             Developer link all silently do nothing instead of opening —
+             the query is what lets us "see" the browser/Play Store app to
+             launch it. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="market"/>
+        </intent>
     </queries>
 </manifest>
