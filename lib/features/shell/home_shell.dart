@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../app/providers.dart';
 import '../../core/design/spacing.dart';
@@ -25,6 +25,28 @@ import '../merchants/merchants_screen.dart';
 import '../sms_import/sms_import_controller.dart';
 import '../sms_import/sms_import_sheet.dart';
 import '../transactions/transactions_screen.dart';
+
+/// The frosted capsule material over a soft optical rim — the
+/// liquid_glass_easy package's own tuned nav-bar look, taken from its
+/// tab_bar_page.dart example (real refraction + a lit rim, not a flat
+/// blur fill).
+// `clipQuality` is left at its default (roundedRectangle) rather than
+// `exact`: the docs note `exact` is unnecessary for this shape (a plain
+// rounded-rect clip already hugs a continuous corner closely) and, on
+// this device, pairing it with `.withImpeller` renders the whole bar
+// invisible instead of just costing the extra save layer.
+LiquidGlassShape _navPillShape(double cornerRadius) =>
+    LiquidGlassShape.continuousRoundedRectangle(
+      cornerRadius: cornerRadius,
+      borderWidth: 0.7,
+      lightIntensity: 0.9,
+      lightDirection: 62,
+      borderType: const OpticalBorder(
+        borderSaturation: 1.1,
+        ambientIntensity: 0.85,
+        borderSolidity: 0.95,
+      ),
+    );
 
 /// Shell with a floating pill navigation bar (Home / Activity / + / Budgets /
 /// Merchants), a floating AI button bottom-right, and a floating Profile
@@ -233,8 +255,15 @@ class _HomeShellState extends ConsumerState<HomeShell>
       ProfileScreen(onBack: () => _openTab(_lastMainTab)),
     ];
 
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final bottomSafeInset = MediaQuery.paddingOf(context).bottom;
+    const barHeight = 60.0;
+    const barBottomMargin = 22.0;
+    final barWidth = (screenWidth - AppSpacing.lg * 2).clamp(280.0, 560.0);
+
     return Scaffold(
-      extendBody: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -263,69 +292,114 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 ),
               ),
             ),
-        ],
-      ),
-      // Hidden on the AI screen itself so it never overlaps the composer.
-      floatingActionButton: _index == 2
-          ? null
-          : FloatingActionButton(
-              heroTag: 'aiFab',
-              onPressed: () => _openTab(2),
-              child: const Icon(Icons.auto_awesome),
+          // Hidden on the AI screen itself so it never overlaps the composer.
+          if (_index != 2)
+            Positioned(
+              right: AppSpacing.lg,
+              bottom: bottomSafeInset + barBottomMargin + barHeight + AppSpacing.md,
+              child: FloatingActionButton(
+                heroTag: 'aiFab',
+                onPressed: () => _openTab(2),
+                child: const Icon(Icons.auto_awesome),
+              ),
             ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-        child: SafeArea(
-          top: false,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            // Frosted-glass floating pill: blur what's behind it rather than
-            // an opaque fill, so scrolled content shows through softly.
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-              child: NavigationBar(
-              height: 66,
-              // A neutral frosted white/black glass (not theme-tinted) reads
-              // as a true glass pane over whatever's scrolled beneath it.
-              backgroundColor: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black
-                      : Colors.white)
-                  .withValues(alpha: 0.6),
-              selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
-              onDestinationSelected: (i) {
-                if (i == 2) {
-                  _openActions();
-                  return;
-                }
-                _openTab(i);
-              },
-              destinations: const [
-                NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Home'),
-                NavigationDestination(
-                    icon: Icon(Icons.receipt_long_outlined),
-                    selectedIcon: Icon(Icons.receipt_long),
-                    label: 'Activity'),
-                NavigationDestination(
-                    icon: Icon(Icons.add_circle_outline),
-                    selectedIcon: Icon(Icons.add_circle),
-                    label: 'Add'),
-                NavigationDestination(
-                    icon: Icon(Icons.savings_outlined),
-                    selectedIcon: Icon(Icons.savings),
-                    label: 'Budgets'),
-                NavigationDestination(
-                    icon: Icon(Icons.storefront_outlined),
-                    selectedIcon: Icon(Icons.storefront),
-                    label: 'Merchants'),
-              ],
+          // Real liquid glass — refracts the live app content behind it
+          // (Impeller's backdrop, no captured body needed).
+          //
+          // Deliberately the PLAIN `LiquidGlassTabBar(...)`, not
+          // `.withImpeller`. Every `.withImpeller` variant tried in this
+          // exact spot — the tab-bar example's own tuned refraction, a
+          // heavier blur (40) with a lower neutral alpha (0.56/0.62), a
+          // fully custom shape/border/shadow at alpha 0.72-0.85 — either
+          // produced a broken diagonal render artifact or, like the
+          // heavy-blur/low-alpha attempt, rendered so faint it blended
+          // into the Dashboard's "Explore" icon row directly above the
+          // bar and became illegible. `.withImpeller`'s full-screen
+          // overlay architecture is the common factor across all of
+          // those, not any particular style value. This plain
+          // constructor (a single small bounded lens, tap-only — no
+          // press-and-hold-to-drag between tabs, that gesture lives only
+          // in the `.withImpeller` pipeline) is the one configuration
+          // that has rendered cleanly and legibly across repeated
+          // on-device verification.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: barBottomMargin + bottomSafeInset,
+            child: Center(
+              child: LiquidGlassTabBar(
+                width: barWidth,
+                height: barHeight,
+                style: LiquidGlassStyle(
+                  shape: _navPillShape(barHeight / 2),
+                  appearance: LiquidGlassAppearance(
+                    color: (isDark ? Colors.black : Colors.white)
+                        .withValues(alpha: 0.72),
+                    blur: const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
+                    shadow: const LiquidGlassShadow(blur: 9, opacity: 0.13),
+                  ),
+                  refraction: const LiquidGlassRefraction(
+                    distortion: 0.06,
+                    distortionWidth: 26,
+                  ),
+                ),
+                itemStyle: LiquidGlassTabItemStyle(
+                  selectedColor: scheme.primary,
+                  unselectedColor:
+                      isDark ? Colors.white70 : const Color(0xFF121215),
+                  selectedFontWeight: FontWeight.w700,
+                ),
+                // A sliding highlight bubble behind the selected tab.
+                // This is the FLAT pill path (`AnimatedBottomNavBarContent`
+                // — a plain `AnimationController` + `CustomPaint`, no
+                // shader, no backdrop capture), completely separate from
+                // the glass-refracting morph pill that only exists on
+                // `.withImpeller` (confirmed unstable on this device —
+                // see the note above the bar). Safe to animate.
+                pillStyle: LiquidGlassTabPillStyle(
+                  show: true,
+                  animated: true,
+                  rest: LiquidGlassStyle(
+                    shape: _navPillShape(28),
+                    appearance: const LiquidGlassAppearance(
+                      color: Color(0x2EAEAEB2),
+                    ),
+                  ),
+                ),
+                selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
+                onChanged: (i) {
+                  if (i == 2) {
+                    _openActions();
+                    return;
+                  }
+                  _openTab(i);
+                },
+                items: const [
+                  LiquidGlassTabBarItem(
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      label: 'Home'),
+                  LiquidGlassTabBarItem(
+                      icon: Icons.receipt_long_outlined,
+                      selectedIcon: Icons.receipt_long,
+                      label: 'Activity'),
+                  LiquidGlassTabBarItem(
+                      icon: Icons.add_circle_outline,
+                      selectedIcon: Icons.add_circle,
+                      label: 'Add'),
+                  LiquidGlassTabBarItem(
+                      icon: Icons.savings_outlined,
+                      selectedIcon: Icons.savings,
+                      label: 'Budgets'),
+                  LiquidGlassTabBarItem(
+                      icon: Icons.storefront_outlined,
+                      selectedIcon: Icons.storefront,
+                      label: 'Merchants'),
+                ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

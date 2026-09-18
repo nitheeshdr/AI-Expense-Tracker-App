@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import 'app/app.dart';
 import 'core/db/app_database.dart';
@@ -11,6 +12,9 @@ import 'services/notifications/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Compile the liquid-glass shaders up front so the nav bar's glass pill
+  // is real glass on its first frame instead of frosted for a moment.
+  unawaited(LiquidGlassShaders.ensureLoaded());
 
   final container = ProviderContainer();
   // Warm the database (runs migrations + seed on first launch) and hydrate
