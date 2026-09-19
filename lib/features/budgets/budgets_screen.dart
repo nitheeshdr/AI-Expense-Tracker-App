@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../app/providers.dart';
 import '../../core/data/models.dart';
@@ -32,222 +33,286 @@ class BudgetsScreen extends ConsumerWidget {
     final summary = ref.watch(monthSummaryProvider);
     final subscriptions = ref.watch(subscriptionsProvider);
 
+    // NOT LiquidGlassScaffold (that corrupted the nav bar elsewhere in the
+    // app — see git history). But a LiquidGlassButton IS safe as a plain
+    // list item now: the package's own README documents that a lens
+    // *inside* a scrollable reads black specifically during Android's
+    // stretch-overscroll (the rubber-band pull past the list's edge) —
+    // not from ordinary scrolling — because the overscroll wraps the list
+    // in a texture that doesn't contain the page behind it. The fix is
+    // exactly what's below: disable the overscroll stretch so that
+    // texture, and the black-out, never happens.
     return AppScaffold(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenH, AppSpacing.md, AppSpacing.screenH, 130),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Budgets',
-                  style: AppType.h1.copyWith(color: c.textPrimary)),
-              // Plain Material, not LiquidGlassButton: this row scrolls
-              // as part of the screen's ListView, and any liquid_glass_easy
-              // widget moving during scroll turns solid black (confirmed
-              // on-device). Glass stays on fixed-position UI only.
-              IconButton.filledTonal(
-                onPressed: () => showBudgetEditor(context, ref),
-                icon: const Icon(Icons.add),
-              ),
-            ],
+      child: ScrollConfiguration(
+        behavior: const MaterialScrollBehavior().copyWith(overscroll: false),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenH,
+            AppSpacing.md,
+            AppSpacing.screenH,
+            130,
           ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Overall budget hero ring
-          budgets.when(
-            loading: () => const Shimmer(height: 170, radius: AppRadii.lg),
-            error: (e, _) => ErrorView(message: '$e'),
-            data: (list) {
-              final overall = list
-                  .where((b) => b.category == 'Overall')
-                  .fold(0.0, (a, b) => a + b.amount);
-              final spent = summary.value?.expense ?? 0;
-              return _OverallCard(
-                  budget: overall, spent: spent, currency: cur);
-            },
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const BannerAdCard(),
-          const SizedBox(height: AppSpacing.lg),
-
-          const SectionHeader(title: 'Category budgets'),
-          budgets.when(
-            loading: () => Column(
-                children: List.generate(
-                    3, (_) => const Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.md),
-                        child: Shimmer(height: 64, radius: AppRadii.md)))),
-            error: (e, _) => ErrorView(message: '$e'),
-            data: (list) {
-              final cats = list.where((b) => b.category != 'Overall').toList();
-              if (cats.isEmpty) {
-                return const EmptyState(
-                  emoji: '🎯',
-                  title: 'No category budgets',
-                  message: 'Add one with the + button above.',
-                );
-              }
-              return Column(
-                children: [
-                  for (final b in cats)
-                    _CategoryBudgetCard(
-                      budget: b,
-                      currency: cur,
-                      onEdit: () =>
-                          showBudgetEditor(context, ref, existing: b),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const NativeAdCard(),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Investments (auto-tracked from SMS/manual entries tagged Mutual
-          // Funds — shown even without a budget cap set for the category).
-          const SectionHeader(title: 'Investments'),
-          Consumer(
-            builder: (context, ref, _) {
-              final invested =
-                  ref.watch(_categorySpentProvider('Mutual Funds')).value ?? 0;
-              return GlassCard(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Row(
-                  children: [
-                    const CategoryIcon(category: 'Mutual Funds', size: 42),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Mutual Funds',
-                              style: AppType.h3.copyWith(
-                                  color: c.textPrimary, fontSize: 15)),
-                          Text('This month',
-                              style: AppType.caption
-                                  .copyWith(color: c.textTertiary)),
-                        ],
-                      ),
-                    ),
-                    Text(Money.format(invested, code: cur),
-                        style: AppType.numericMedium
-                            .copyWith(fontSize: 15, color: c.textPrimary)),
-                  ],
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Budgets',
+                  style: AppType.h1.copyWith(color: c.textPrimary),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.xl),
-
-          // Subscriptions & autopay
-          const SectionHeader(title: 'Subscriptions & autopay'),
-          subscriptions.when(
-            loading: () => const Shimmer(height: 70, radius: AppRadii.lg),
-            error: (e, _) => ErrorView(message: '$e'),
-            data: (list) {
-              if (list.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.autorenew,
-                  title: 'No recurring bills yet',
-                  message:
-                      'Subscriptions and autopay from your SMS will appear here.',
-                );
-              }
-              final monthly = list.fold(0.0, (a, s) => a + s.amount);
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Row(
-                      children: [
-                        Text('${list.length} active',
-                            style: AppType.bodySm
-                                .copyWith(color: c.textSecondary)),
-                        const Spacer(),
-                        Text(
-                            '~${Money.format(monthly, code: cur, compact: true)} / mo',
-                            style: AppType.bodySm.copyWith(
-                                color: c.textPrimary,
-                                fontWeight: FontWeight.w700)),
-                      ],
+                LiquidGlassButton(
+                  onPressed: () => showBudgetEditor(context, ref),
+                  height: 44,
+                  width: 44,
+                  padding: EdgeInsets.zero,
+                  icon: Icons.add,
+                  foregroundColor: c.accent,
+                  style: LiquidGlassButton.defaultStyle.copyWith(
+                    shape: const LiquidGlassShape.roundedRectangle(
+                      cornerRadius: 22,
+                      borderWidth: 0,
                     ),
+                    appearance: LiquidGlassButton.defaultStyle.appearance
+                        .copyWith(color: c.accentSoft),
                   ),
-                  for (final sub in list)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: GlassCard(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Row(
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Overall budget hero ring
+            budgets.when(
+              loading: () => const Shimmer(height: 170, radius: AppRadii.lg),
+              error: (e, _) => ErrorView(message: '$e'),
+              data: (list) {
+                final overall = list
+                    .where((b) => b.category == 'Overall')
+                    .fold(0.0, (a, b) => a + b.amount);
+                final spent = summary.value?.expense ?? 0;
+                return _OverallCard(
+                  budget: overall,
+                  spent: spent,
+                  currency: cur,
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const BannerAdCard(),
+            const SizedBox(height: AppSpacing.lg),
+
+            const SectionHeader(title: 'Category budgets'),
+            budgets.when(
+              loading: () => Column(
+                children: List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Shimmer(height: 64, radius: AppRadii.md),
+                  ),
+                ),
+              ),
+              error: (e, _) => ErrorView(message: '$e'),
+              data: (list) {
+                final cats = list
+                    .where((b) => b.category != 'Overall')
+                    .toList();
+                if (cats.isEmpty) {
+                  return const EmptyState(
+                    emoji: '🎯',
+                    title: 'No category budgets',
+                    message: 'Add one with the + button above.',
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final b in cats)
+                      _CategoryBudgetCard(
+                        budget: b,
+                        currency: cur,
+                        onEdit: () =>
+                            showBudgetEditor(context, ref, existing: b),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const NativeAdCard(),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Investments (auto-tracked from SMS/manual entries tagged Mutual
+            // Funds — shown even without a budget cap set for the category).
+            const SectionHeader(title: 'Investments'),
+            Consumer(
+              builder: (context, ref, _) {
+                final invested =
+                    ref.watch(_categorySpentProvider('Mutual Funds')).value ??
+                    0;
+                return GlassCard(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Row(
+                    children: [
+                      const CategoryIcon(category: 'Mutual Funds', size: 42),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CategoryIcon(category: sub.category, size: 42),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(sub.merchant,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppType.h3.copyWith(
-                                          color: c.textPrimary, fontSize: 15)),
-                                  Text(
-                                      '${sub.category} · last ${Dates.relative(sub.lastDate)}',
-                                      style: AppType.caption
-                                          .copyWith(color: c.textTertiary)),
-                                ],
+                            Text(
+                              'Mutual Funds',
+                              style: AppType.h3.copyWith(
+                                color: c.textPrimary,
+                                fontSize: 15,
                               ),
                             ),
-                            Text(Money.format(sub.amount, code: cur),
-                                style: AppType.numericMedium.copyWith(
-                                    fontSize: 15, color: c.textPrimary)),
+                            Text(
+                              'This month',
+                              style: AppType.caption.copyWith(
+                                color: c.textTertiary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.xl),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Savings goals',
-                  style: AppType.h2.copyWith(color: c.textPrimary)),
-              TextButton(
-                onPressed: () => showGoalEditor(context, ref),
-                child: const Text('Add goal'),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          goals.when(
-            loading: () => const Shimmer(height: 90, radius: AppRadii.lg),
-            error: (e, _) => ErrorView(message: '$e'),
-            data: (list) {
-              if (list.isEmpty) {
-                return const EmptyState(
-                  emoji: '🏖️',
-                  title: 'No goals yet',
-                  message: 'Set a target to start saving toward it.',
+                      Text(
+                        Money.format(invested, code: cur),
+                        style: AppType.numericMedium.copyWith(
+                          fontSize: 15,
+                          color: c.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
-              }
-              return Column(
-                children: [
-                  for (final g in list)
-                    _GoalCard(
-                      goal: g,
-                      currency: cur,
-                      onTap: () => showGoalEditor(context, ref, existing: g),
+              },
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            // Subscriptions & autopay
+            const SectionHeader(title: 'Subscriptions & autopay'),
+            subscriptions.when(
+              loading: () => const Shimmer(height: 70, radius: AppRadii.lg),
+              error: (e, _) => ErrorView(message: '$e'),
+              data: (list) {
+                if (list.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.autorenew,
+                    title: 'No recurring bills yet',
+                    message:
+                        'Subscriptions and autopay from your SMS will appear here.',
+                  );
+                }
+                final monthly = list.fold(0.0, (a, s) => a + s.amount);
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${list.length} active',
+                            style: AppType.bodySm.copyWith(
+                              color: c.textSecondary,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '~${Money.format(monthly, code: cur, compact: true)} / mo',
+                            style: AppType.bodySm.copyWith(
+                              color: c.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                ],
-              );
-            },
-          ),
-        ],
+                    for (final sub in list)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Row(
+                            children: [
+                              CategoryIcon(category: sub.category, size: 42),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      sub.merchant,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppType.h3.copyWith(
+                                        color: c.textPrimary,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${sub.category} · last ${Dates.relative(sub.lastDate)}',
+                                      style: AppType.caption.copyWith(
+                                        color: c.textTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                Money.format(sub.amount, code: cur),
+                                style: AppType.numericMedium.copyWith(
+                                  fontSize: 15,
+                                  color: c.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Savings goals',
+                  style: AppType.h2.copyWith(color: c.textPrimary),
+                ),
+                TextButton(
+                  onPressed: () => showGoalEditor(context, ref),
+                  child: const Text('Add goal'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            goals.when(
+              loading: () => const Shimmer(height: 90, radius: AppRadii.lg),
+              error: (e, _) => ErrorView(message: '$e'),
+              data: (list) {
+                if (list.isEmpty) {
+                  return const EmptyState(
+                    emoji: '🏖️',
+                    title: 'No goals yet',
+                    message: 'Set a target to start saving toward it.',
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final g in list)
+                      _GoalCard(
+                        goal: g,
+                        currency: cur,
+                        onTap: () => showGoalEditor(context, ref, existing: g),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -271,8 +336,8 @@ class _OverallCard extends StatelessWidget {
     final ringColor = pct < 0.7
         ? c.income
         : pct < 1
-            ? c.warning
-            : c.expense;
+        ? c.warning
+        : c.expense;
     return GlassCard(
       radius: AppRadii.xl,
       child: Row(
@@ -285,10 +350,14 @@ class _OverallCard extends StatelessWidget {
             center: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${(pct * 100).round()}%',
-                    style: AppType.h2.copyWith(color: c.textPrimary)),
-                Text('used',
-                    style: AppType.caption.copyWith(color: c.textTertiary)),
+                Text(
+                  '${(pct * 100).round()}%',
+                  style: AppType.h2.copyWith(color: c.textPrimary),
+                ),
+                Text(
+                  'used',
+                  style: AppType.caption.copyWith(color: c.textTertiary),
+                ),
               ],
             ),
           ),
@@ -297,8 +366,10 @@ class _OverallCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Monthly budget',
-                    style: AppType.label.copyWith(color: c.textSecondary)),
+                Text(
+                  'Monthly budget',
+                  style: AppType.label.copyWith(color: c.textSecondary),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 AnimatedMoney(
                   value: spent,
@@ -306,8 +377,10 @@ class _OverallCard extends StatelessWidget {
                   style: AppType.numericMedium.copyWith(color: c.textPrimary),
                 ),
                 const SizedBox(height: 2),
-                Text('of ${Money.format(budget, code: currency)}',
-                    style: AppType.bodySm.copyWith(color: c.textSecondary)),
+                Text(
+                  'of ${Money.format(budget, code: currency)}',
+                  style: AppType.bodySm.copyWith(color: c.textSecondary),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 StatusPill(
                   label: over
@@ -361,20 +434,27 @@ class _CategoryBudgetCard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(budget.category,
-                          style: AppType.h3
-                              .copyWith(color: c.textPrimary, fontSize: 15)),
                       Text(
-                          '${Money.format(spent, code: currency)} of ${Money.format(budget.amount, code: currency)}',
-                          style: AppType.caption
-                              .copyWith(color: c.textTertiary)),
+                        budget.category,
+                        style: AppType.h3.copyWith(
+                          color: c.textPrimary,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        '${Money.format(spent, code: currency)} of ${Money.format(budget.amount, code: currency)}',
+                        style: AppType.caption.copyWith(color: c.textTertiary),
+                      ),
                     ],
                   ),
                 ),
-                Text('${(pct * 100).round()}%',
-                    style: AppType.numericMedium.copyWith(
-                        fontSize: 15,
-                        color: over ? c.expense : c.textPrimary)),
+                Text(
+                  '${(pct * 100).round()}%',
+                  style: AppType.numericMedium.copyWith(
+                    fontSize: 15,
+                    color: over ? c.expense : c.textPrimary,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -435,21 +515,28 @@ class _GoalCard extends StatelessWidget {
               size: 58,
               stroke: 7,
               color: c.accent,
-              center: Text('${(goal.progress * 100).round()}%',
-                  style: AppType.caption.copyWith(color: c.textPrimary)),
+              center: Text(
+                '${(goal.progress * 100).round()}%',
+                style: AppType.caption.copyWith(color: c.textPrimary),
+              ),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(goal.name,
-                      style: AppType.h3
-                          .copyWith(color: c.textPrimary, fontSize: 15)),
+                  Text(
+                    goal.name,
+                    style: AppType.h3.copyWith(
+                      color: c.textPrimary,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(
-                      '${Money.format(goal.saved, code: currency)} of ${Money.format(goal.target, code: currency)}',
-                      style: AppType.bodySm.copyWith(color: c.textSecondary)),
+                    '${Money.format(goal.saved, code: currency)} of ${Money.format(goal.target, code: currency)}',
+                    style: AppType.bodySm.copyWith(color: c.textSecondary),
+                  ),
                 ],
               ),
             ),
@@ -461,8 +548,10 @@ class _GoalCard extends StatelessWidget {
 }
 
 /// Per-category spent for the current month (kept tiny + auto-invalidated).
-final _categorySpentProvider =
-    FutureProvider.family<double, String>((ref, category) async {
+final _categorySpentProvider = FutureProvider.family<double, String>((
+  ref,
+  category,
+) async {
   ref.watch(dataRevisionProvider);
   final range = currentMonthRange();
   return ref

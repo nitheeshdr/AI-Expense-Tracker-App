@@ -20,7 +20,11 @@ class _BannerAdCardState extends State<BannerAdCard> {
   bool _requested = false;
 
   Future<void> _load(int width) async {
-    if (!AdsManager.instance.isInitialized || width <= 0) return;
+    if (!AdsManager.instance.isInitialized ||
+        AdsManager.instance.isAdFreeActive ||
+        width <= 0) {
+      return;
+    }
     final size = await AdSize.getAnchoredAdaptiveBannerAdSize(
         Orientation.portrait, width);
     if (size == null) return;
@@ -59,7 +63,11 @@ class _BannerAdCardState extends State<BannerAdCard> {
           _requested = true;
           _load(constraints.maxWidth.floor());
         }
-        if (_size == null || _ad == null) return const SizedBox.shrink();
+        if (_size == null ||
+            _ad == null ||
+            AdsManager.instance.isAdFreeActive) {
+          return const SizedBox.shrink();
+        }
         return Container(
           margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           padding: const EdgeInsets.only(top: 4),

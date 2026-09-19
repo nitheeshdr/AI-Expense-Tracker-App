@@ -23,7 +23,7 @@ class AppSettings {
   final double monthlyBudget;
 
   const AppSettings({
-    this.themeMode = AppThemeMode.dark,
+    this.themeMode = AppThemeMode.light,
     this.currency = 'INR',
     this.userName = 'there',
     this.onboarded = false,
@@ -90,11 +90,11 @@ class SettingsController extends Notifier<AppSettings> {
 
   Future<void> load() async {
     final prefs = _prefs ??= await SharedPreferences.getInstance();
-    final modeName = prefs.getString(_kThemeMode) ?? 'dark';
+    final modeName = prefs.getString(_kThemeMode) ?? 'light';
     final loaded = AppSettings(
       themeMode: AppThemeMode.values.firstWhere(
         (m) => m.name == modeName,
-        orElse: () => AppThemeMode.dark,
+        orElse: () => AppThemeMode.light,
       ),
       currency: prefs.getString(_kCurrency) ?? 'INR',
       userName: prefs.getString(_kUserName) ?? 'there',

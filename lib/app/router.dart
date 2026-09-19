@@ -7,11 +7,17 @@ import '../core/settings/settings.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/shell/home_shell.dart';
 
+/// Root navigator, exposed so non-widget singletons (e.g. `AdsManager`,
+/// which needs to show a dialog after an interstitial closes) can reach a
+/// `BuildContext` without one being passed down through every call site.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// App routes. First run shows the SMS-permission onboarding; afterwards the
 /// app opens straight on the home shell showing real (SMS-imported) data.
 final routerProvider = Provider<GoRouter>((ref) {
   final onboarded = ref.read(settingsProvider).onboarded;
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: onboarded ? '/home' : '/onboarding',
     routes: [
       _fade('/onboarding', const OnboardingScreen()),

@@ -81,14 +81,16 @@ class _HomeShellState extends ConsumerState<HomeShell>
     AppUpdateService.instance.checkAndStartFlexibleUpdate();
     _updateSub = AppUpdateService.instance.installStatus.listen((status) {
       if (status == InstallStatus.downloaded && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          duration: const Duration(days: 1),
-          content: const Text('Update downloaded'),
-          action: SnackBarAction(
-            label: 'Restart',
-            onPressed: AppUpdateService.instance.completeUpdate,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(days: 1),
+            content: const Text('Update downloaded'),
+            action: SnackBarAction(
+              label: 'Restart',
+              onPressed: AppUpdateService.instance.completeUpdate,
+            ),
           ),
-        ));
+        );
       }
     });
     // Begin real-time SMS capture: new bank/UPI messages become transactions
@@ -102,11 +104,14 @@ class _HomeShellState extends ConsumerState<HomeShell>
           '${Money.signed(isIncome ? txn.amount : -txn.amount, code: currency)} · ${txn.merchant}',
         );
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              'Auto-captured ${Money.format(txn.amount, code: currency)} · ${txn.merchant}'),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Auto-captured ${Money.format(txn.amount, code: currency)} · ${txn.merchant}',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       });
       // Catch up on any bank SMS that arrived while the app was closed.
       ref.read(smsImportProvider.notifier).silentSync();
@@ -167,9 +172,14 @@ class _HomeShellState extends ConsumerState<HomeShell>
     final now = DateTime.now();
     final dayStart = DateTime(now.year, now.month, now.day);
     final repo = ref.read(transactionRepoProvider);
-    final today = await repo.totals(dayStart, dayStart.add(const Duration(days: 1)));
+    final today = await repo.totals(
+      dayStart,
+      dayStart.add(const Duration(days: 1)),
+    );
     final month = await repo.totals(
-        DateTime(now.year, now.month), DateTime(now.year, now.month + 1));
+      DateTime(now.year, now.month),
+      DateTime(now.year, now.month + 1),
+    );
     final budget = s.monthlyBudget;
     final pct = budget <= 0
         ? 0
@@ -279,173 +289,220 @@ class _HomeShellState extends ConsumerState<HomeShell>
     const barBottomMargin = 22.0;
     final barWidth = (screenWidth - AppSpacing.lg * 2).clamp(280.0, 560.0);
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: IndexedStack(
-              index: _index,
-              children: [
-                for (var i = 0; i < pages.length; i++)
-                  _visitedTabs.contains(i) ? pages[i] : const SizedBox.shrink(),
-              ],
+    // Tab switching is internal state (`_index`), not routed navigation, so
+    // there's nothing on the Navigator stack for the system back button to
+    // pop once here — it fell straight through to closing the app. Now:
+    // back from any non-Home tab returns to Home first; only a second back
+    // press (already on Home, nothing left to redirect) exits normally.
+    return PopScope(
+      canPop: _index == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _openTab(0);
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: IndexedStack(
+                index: _index,
+                children: [
+                  for (var i = 0; i < pages.length; i++)
+                    _visitedTabs.contains(i)
+                        ? pages[i]
+                        : const SizedBox.shrink(),
+                ],
+              ),
             ),
-          ),
-          // Profile now lives here instead of the nav bar, floating
-          // top-right — only on the Home tab, not sticky across every tab.
-          // Fixed screen position (not scrolling with page content), same
-          // as the nav bar's own stable LiquidGlassLens — unlike GlassCard
-          // (reverted after turning black mid-scroll), a glass surface
-          // that stays put while content scrolls behind it has been solid
-          // all session.
-          if (_index == 0)
-            Positioned(
-              top: 0,
-              right: AppSpacing.lg,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.sm),
-                  child: LiquidGlassFab(
-                    heroTag: 'profileFab',
-                    size: 44,
-                    onPressed: () => _openTab(5),
-                    icon: Icons.person_outline,
-                    foregroundColor:
-                        isDark ? Colors.white70 : const Color(0xFF121215),
-                    style: LiquidGlassFab.defaultStyle.copyWith(
-                      appearance: LiquidGlassFab.defaultStyle.appearance
-                          .copyWith(
+            // Profile now lives here instead of the nav bar, floating
+            // top-right — only on the Home tab, not sticky across every tab.
+            // Fixed screen position (not scrolling with page content), same
+            // as the nav bar's own stable LiquidGlassLens — unlike GlassCard
+            // (reverted after turning black mid-scroll), a glass surface
+            // that stays put while content scrolls behind it has been solid
+            // all session.
+            if (_index == 0)
+              Positioned(
+                top: 0,
+                right: AppSpacing.lg,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: LiquidGlassFab(
+                      heroTag: 'profileFab',
+                      size: 44,
+                      // The default padding (16 all round) doesn't shrink to
+                      // fit a 44px size with a 24px icon — 16+24+16 > 44 —
+                      // which pushed the icon off-center. Zero it so the
+                      // icon centers in the circle.
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _openTab(5),
+                      icon: Icons.person_outline,
+                      foregroundColor: isDark
+                          ? Colors.white70
+                          : const Color(0xFF121215),
+                      style: LiquidGlassFab.defaultStyle.copyWith(
+                        appearance: LiquidGlassFab.defaultStyle.appearance
+                            .copyWith(
+                              // Genuinely transparent glass, not a solid
+                              // tinted circle — a light tint just enough to
+                              // read as a surface, real refraction of the
+                              // page behind doing the rest of the work.
                               color: (isDark ? Colors.black : Colors.white)
-                                  .withValues(alpha: 0.72)),
+                                  .withValues(alpha: isDark ? 0.3 : 0.22),
+                              blur: const LiquidGlassBlur(sigmaX: 8, sigmaY: 8),
+                            ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          // Hidden on the AI screen itself so it never overlaps the composer.
-          if (_index != 2)
+            // Hidden on the AI screen itself so it never overlaps the composer.
+            if (_index != 2)
+              Positioned(
+                right: AppSpacing.lg,
+                bottom:
+                    bottomSafeInset +
+                    barBottomMargin +
+                    barHeight +
+                    AppSpacing.md,
+                child: LiquidGlassFab(
+                  heroTag: 'aiFab',
+                  onPressed: () => _openTab(2),
+                  icon: Icons.auto_awesome,
+                  foregroundColor: scheme.primary,
+                  style: LiquidGlassFab.defaultStyle.copyWith(
+                    appearance: LiquidGlassFab.defaultStyle.appearance.copyWith(
+                      // Genuinely transparent glass, same reasoning as the
+                      // profile FAB above — a light tint, not a solid disc.
+                      color: (isDark ? Colors.black : Colors.white).withValues(
+                        alpha: isDark ? 0.3 : 0.22,
+                      ),
+                      blur: const LiquidGlassBlur(sigmaX: 8, sigmaY: 8),
+                    ),
+                  ),
+                ),
+              ),
+            // Two components, stacked:
+            //
+            // 1. Background only — a plain `LiquidGlassLens` shaped like the
+            //    bar, no items at all. This exact style (shape/blur/color)
+            //    is the one configuration that has reliably rendered a
+            //    clean, visible capsule on this device across the whole
+            //    session; the plain `LiquidGlassTabBar`'s own icon-drawing
+            //    is skipped entirely here so there is nothing for the real
+            //    bar below to duplicate.
             Positioned(
-              right: AppSpacing.lg,
-              bottom: bottomSafeInset + barBottomMargin + barHeight + AppSpacing.md,
-              child: LiquidGlassFab(
-                heroTag: 'aiFab',
-                onPressed: () => _openTab(2),
-                icon: Icons.auto_awesome,
-                foregroundColor: scheme.primary,
-                style: LiquidGlassFab.defaultStyle.copyWith(
-                  appearance: LiquidGlassFab.defaultStyle.appearance.copyWith(
-                    color: (isDark ? Colors.black : Colors.white)
-                        .withValues(alpha: 0.72),
-                    blur: const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
-                  ),
-                ),
-              ),
-            ),
-          // Two components, stacked:
-          //
-          // 1. Background only — a plain `LiquidGlassLens` shaped like the
-          //    bar, no items at all. This exact style (shape/blur/color)
-          //    is the one configuration that has reliably rendered a
-          //    clean, visible capsule on this device across the whole
-          //    session; the plain `LiquidGlassTabBar`'s own icon-drawing
-          //    is skipped entirely here so there is nothing for the real
-          //    bar below to duplicate.
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: barBottomMargin + bottomSafeInset,
-            child: Center(
-              child: SizedBox(
-                width: barWidth,
-                height: barHeight,
-                child: LiquidGlassLens(
-                  style: LiquidGlassStyle(
-                    shape: _navPillShape(barHeight / 2),
-                    appearance: LiquidGlassAppearance(
-                      color: (isDark ? Colors.black : Colors.white)
-                          .withValues(alpha: 0.72),
-                      blur: const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
-                      shadow: const LiquidGlassShadow(blur: 9, opacity: 0.13),
-                    ),
-                    refraction: const LiquidGlassRefraction(
-                      distortion: 0.06,
-                      distortionWidth: 26,
+              left: 0,
+              right: 0,
+              bottom: barBottomMargin + bottomSafeInset,
+              child: Center(
+                child: SizedBox(
+                  width: barWidth,
+                  height: barHeight,
+                  child: LiquidGlassLens(
+                    style: LiquidGlassStyle(
+                      shape: _navPillShape(barHeight / 2),
+                      // More glass in dark mode — lower tint, heavier blur —
+                      // a near-opaque black capsule read as a flat panel
+                      // rather than frosted glass against dark pages.
+                      appearance: LiquidGlassAppearance(
+                        color: (isDark ? Colors.black : Colors.white)
+                            .withValues(alpha: isDark ? 0.5 : 0.72),
+                        blur: isDark
+                            ? const LiquidGlassBlur(sigmaX: 20, sigmaY: 20)
+                            : const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
+                        shadow: const LiquidGlassShadow(blur: 9, opacity: 0.13),
+                      ),
+                      refraction: const LiquidGlassRefraction(
+                        distortion: 0.06,
+                        distortionWidth: 26,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          // 2. The package's real, proper nav bar — actual icons, labels,
-          // selection and the genuine drag-capable glass pill
-          // (`pillStyle.mode: impellerOnly`). Its OWN capsule is set to a
-          // near-invisible fill (not exactly transparent — a true 0-alpha
-          // fill was what produced color-fringed corruption in testing)
-          // so component 1 above is the only visible background and
-          // there is no double capsule.
-          LiquidGlassTabBar.withImpeller(
-            width: barWidth,
-            height: barHeight,
-            // No `+ bottomSafeInset` here: `.withImpeller`'s own build()
-            // adds `MediaQuery.of(context).padding.bottom` automatically
-            // (matching the package's own demo note — "the scaffold adds
-            // the safe-area inset on top of this"), so including it twice
-            // pushed this component higher than component 1, visibly
-            // misaligning the two.
-            margin: EdgeInsets.only(bottom: barBottomMargin),
-            style: LiquidGlassStyle(
-              shape: _navPillShape(barHeight / 2),
-              appearance: LiquidGlassAppearance(
-                color: (isDark ? Colors.black : Colors.white)
-                    .withValues(alpha: 0.02),
-                blur: const LiquidGlassBlur(sigmaX: 0.01, sigmaY: 0.01),
+            // 2. The package's real, proper nav bar — actual icons, labels,
+            // selection and the genuine drag-capable glass pill
+            // (`pillStyle.mode: impellerOnly`). Its OWN capsule is set to a
+            // near-invisible fill (not exactly transparent — a true 0-alpha
+            // fill was what produced color-fringed corruption in testing)
+            // so component 1 above is the only visible background and
+            // there is no double capsule.
+            LiquidGlassTabBar.withImpeller(
+              width: barWidth,
+              height: barHeight,
+              // No `+ bottomSafeInset` here: `.withImpeller`'s own build()
+              // adds `MediaQuery.of(context).padding.bottom` automatically
+              // (matching the package's own demo note — "the scaffold adds
+              // the safe-area inset on top of this"), so including it twice
+              // pushed this component higher than component 1, visibly
+              // misaligning the two.
+              margin: EdgeInsets.only(bottom: barBottomMargin),
+              style: LiquidGlassStyle(
+                shape: _navPillShape(barHeight / 2),
+                appearance: LiquidGlassAppearance(
+                  color: (isDark ? Colors.black : Colors.white).withValues(
+                    alpha: 0.02,
+                  ),
+                  blur: const LiquidGlassBlur(sigmaX: 0.01, sigmaY: 0.01),
+                ),
               ),
-            ),
-            itemStyle: LiquidGlassTabItemStyle(
-              selectedColor: scheme.primary,
-              unselectedColor: isDark ? Colors.white70 : const Color(0xFF121215),
-              selectedFontWeight: FontWeight.w700,
-            ),
-            pillStyle: LiquidGlassTabPillStyle(
-              mode: LiquidGlassPillMode.impellerOnly,
-              rest: LiquidGlassStyle(
-                shape: _navPillShape(28),
-                appearance: const LiquidGlassAppearance(color: Color(0x2EAEAEB2)),
+              itemStyle: LiquidGlassTabItemStyle(
+                selectedColor: scheme.primary,
+                unselectedColor: isDark
+                    ? Colors.white70
+                    : const Color(0xFF121215),
+                selectedFontWeight: FontWeight.w700,
               ),
-            ),
-            selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
-            onChanged: (i) {
-              if (i == 2) {
-                _openActions();
-                return;
-              }
-              _openTab(i);
-            },
-            items: const [
-              LiquidGlassTabBarItem(
+              pillStyle: LiquidGlassTabPillStyle(
+                mode: LiquidGlassPillMode.impellerOnly,
+                rest: LiquidGlassStyle(
+                  shape: _navPillShape(28),
+                  appearance: const LiquidGlassAppearance(
+                    color: Color(0x2EAEAEB2),
+                  ),
+                ),
+              ),
+              selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
+              onChanged: (i) {
+                if (i == 2) {
+                  _openActions();
+                  return;
+                }
+                _openTab(i);
+              },
+              items: const [
+                LiquidGlassTabBarItem(
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home,
-                  label: 'Home'),
-              LiquidGlassTabBarItem(
+                  label: 'Home',
+                ),
+                LiquidGlassTabBarItem(
                   icon: Icons.receipt_long_outlined,
                   selectedIcon: Icons.receipt_long,
-                  label: 'Activity'),
-              LiquidGlassTabBarItem(
+                  label: 'Activity',
+                ),
+                LiquidGlassTabBarItem(
                   icon: Icons.add_circle_outline,
                   selectedIcon: Icons.add_circle,
-                  label: 'Add'),
-              LiquidGlassTabBarItem(
+                  label: 'Add',
+                ),
+                LiquidGlassTabBarItem(
                   icon: Icons.savings_outlined,
                   selectedIcon: Icons.savings,
-                  label: 'Budgets'),
-              LiquidGlassTabBarItem(
+                  label: 'Budgets',
+                ),
+                LiquidGlassTabBarItem(
                   icon: Icons.storefront_outlined,
                   selectedIcon: Icons.storefront,
-                  label: 'Merchants'),
-            ],
-          ),
-        ],
+                  label: 'Merchants',
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -471,30 +528,35 @@ class _ActionsSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SheetHeader(
-            title: 'Quick add',
-            subtitle: 'Log money, or pull transactions from your SMS.'),
+          title: 'Quick add',
+          subtitle: 'Log money, or pull transactions from your SMS.',
+        ),
         _Tile(
-            icon: Icons.south_west,
-            color: cs.onSurface,
-            title: 'Add expense',
-            onTap: onAddExpense),
+          icon: Icons.south_west,
+          color: cs.onSurface,
+          title: 'Add expense',
+          onTap: onAddExpense,
+        ),
         _Tile(
-            icon: Icons.north_east,
-            color: cs.onSurface,
-            title: 'Add income',
-            onTap: onAddIncome),
+          icon: Icons.north_east,
+          color: cs.onSurface,
+          title: 'Add income',
+          onTap: onAddIncome,
+        ),
         _Tile(
-            icon: Icons.sms_outlined,
-            color: cs.primary,
-            title: 'Import from SMS',
-            subtitle: 'Auto-detect bank & UPI messages',
-            onTap: onImportSms),
+          icon: Icons.sms_outlined,
+          color: cs.primary,
+          title: 'Import from SMS',
+          subtitle: 'Auto-detect bank & UPI messages',
+          onTap: onImportSms,
+        ),
         _Tile(
-            icon: Icons.document_scanner_outlined,
-            color: cs.tertiary,
-            title: 'Scan receipt',
-            subtitle: 'Coming soon',
-            onTap: () => onComingSoon('Receipt Scanning')),
+          icon: Icons.document_scanner_outlined,
+          color: cs.tertiary,
+          title: 'Scan receipt',
+          subtitle: 'Coming soon',
+          onTap: () => onComingSoon('Receipt Scanning'),
+        ),
         const SizedBox(height: AppSpacing.sm),
       ],
     );

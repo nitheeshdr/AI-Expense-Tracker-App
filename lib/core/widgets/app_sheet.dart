@@ -23,10 +23,15 @@ Future<T?> showAppSheet<T>(
     useSafeArea: true,
     padding: const EdgeInsets.fromLTRB(
         AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl),
+    // A tinted-enough background to read clearly as its own surface
+    // against the page — the package's own default (14%-alpha) was too
+    // close to the page's own color to look distinct. Sheet content
+    // colors itself explicitly (AppColors.textPrimary etc.), so this
+    // tint only affects the glass surface, not the text on it.
     style: LiquidGlassStyle(
       appearance: LiquidGlassAppearance(
         color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.82),
-        blur: const LiquidGlassBlur(sigmaX: 16, sigmaY: 16),
+        blur: const LiquidGlassBlur(sigmaX: 22, sigmaY: 22),
         shadow: const LiquidGlassShadow(blur: 12, opacity: 0.16),
       ),
       refraction: const LiquidGlassRefraction(distortion: 0.05, distortionWidth: 22),

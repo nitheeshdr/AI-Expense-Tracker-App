@@ -174,11 +174,12 @@ class ProfileScreen extends ConsumerWidget {
           _GroupLabel('Privacy'),
           Card(
             child: Column(children: [
-              // Plain Material Switch, not LiquidGlassSwitch: these rows
-              // scroll as part of the screen's Column/ListView, and any
-              // liquid_glass_easy widget moving during scroll turns solid
-              // black (confirmed on-device). Glass stays on fixed-position
-              // UI only (nav bar, FABs, sheets/dialogs).
+              // Plain Material Switch, NOT LiquidGlassSwitch: re-tested on
+              // request and it turned out worse than the earlier
+              // black-screen-on-scroll bug — scrolling this screen with it
+              // in place randomly reset navigation back to the Home tab
+              // (confirmed reproducible; the same scroll on Budgets, which
+              // has no LiquidGlassSwitch, was unaffected). Not safe here.
               ListTile(
                 leading: const Icon(Icons.fingerprint),
                 title: const Text('App lock'),

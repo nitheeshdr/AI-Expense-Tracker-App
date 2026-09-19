@@ -31,7 +31,10 @@ class _NativeAdCardState extends State<NativeAdCard> {
   }
 
   void _load() {
-    if (!AdsManager.instance.isInitialized) return;
+    if (!AdsManager.instance.isInitialized ||
+        AdsManager.instance.isAdFreeActive) {
+      return;
+    }
     final c = AppTheme.of(context);
     final ad = NativeAd(
       adUnitId: AdConfig.nativeUnit,
@@ -80,7 +83,9 @@ class _NativeAdCardState extends State<NativeAdCard> {
   @override
   Widget build(BuildContext context) {
     final c = AppTheme.of(context);
-    if (!_loaded || _ad == null) return const SizedBox.shrink();
+    if (!_loaded || _ad == null || AdsManager.instance.isAdFreeActive) {
+      return const SizedBox.shrink();
+    }
     return Container(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       decoration: BoxDecoration(

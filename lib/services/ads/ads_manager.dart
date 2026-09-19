@@ -1,6 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../app/router.dart';
 import 'ad_config.dart';
 
 /// Owns the AdMob lifecycle: SDK init, preloading + showing interstitial and
@@ -20,10 +23,24 @@ class AdsManager {
   int _actionCount = 0;
   DateTime _lastInterstitial = DateTime.fromMillisecondsSinceEpoch(0);
 
+  static const _kAdFreeUntil = 'ad_free_until';
+  DateTime? _adFreeUntil;
+
+  /// True while the user's earned "watch a rewarded ad, go ad-free" window
+  /// is active. Interstitial, banner and native ads all check this before
+  /// showing.
+  bool get isAdFreeActive =>
+      _adFreeUntil != null && DateTime.now().isBefore(_adFreeUntil!);
+
   Future<void> init() async {
     if (_initialized) return;
     await MobileAds.instance.initialize();
     _initialized = true;
+    final prefs = await SharedPreferences.getInstance();
+    final untilMs = prefs.getInt(_kAdFreeUntil);
+    if (untilMs != null) {
+      _adFreeUntil = DateTime.fromMillisecondsSinceEpoch(untilMs);
+    }
     _loadInterstitial();
     _loadRewarded();
   }
@@ -41,6 +58,7 @@ class AdsManager {
               ad.dispose();
               _interstitial = null;
               _loadInterstitial();
+              _offerAdFreeSoon();
             },
             onAdFailedToShowFullScreenContent: (ad, err) {
               ad.dispose();
@@ -59,7 +77,9 @@ class AdsManager {
 
   /// Call after a meaningful completed action (e.g. saving a transaction).
   /// Shows an interstitial only every N actions and respecting a min time gap.
+  /// Skipped entirely during an earned ad-free window.
   Future<void> registerActionAndMaybeShow() async {
+    if (isAdFreeActive) return;
     _actionCount++;
     final dueByCount =
         _actionCount % AdConfig.interstitialEveryNActions == 0;
@@ -70,6 +90,52 @@ class AdsManager {
       _lastInterstitial = DateTime.now();
       await _interstitial!.show();
     }
+  }
+
+  /// Offers the user a rewarded ad in exchange for an hour with no ads,
+  /// once the interstitial that just closed has fully settled off-screen —
+  /// stacking a dialog the instant a full-screen ad dismisses reads as one
+  /// jarring flash rather than two distinct moments.
+  void _offerAdFreeSoon() {
+    Future.delayed(const Duration(milliseconds: 500), _showAdFreeOffer);
+  }
+
+  void _showAdFreeOffer() {
+    if (isAdFreeActive || !isRewardedReady) return;
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    showLiquidGlassDialog<void>(
+      context: context,
+      builder: (dialogContext) => LiquidGlassAlertDialog(
+        icon: Icon(Icons.play_circle_fill_rounded,
+            size: 40, color: Theme.of(dialogContext).colorScheme.primary),
+        title: const Text('Go ad-free for 1 hour'),
+        content: const Text(
+            'Watch a short video and every ad — banners, interstitials, '
+            'all of it — stays off for the next hour.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('No thanks'),
+          ),
+          LiquidGlassButton(
+            label: 'Watch ad',
+            height: 40,
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final earned = await showRewarded();
+              if (earned) await _activateAdFree();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _activateAdFree() async {
+    _adFreeUntil = DateTime.now().add(const Duration(hours: 1));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kAdFreeUntil, _adFreeUntil!.millisecondsSinceEpoch);
   }
 
   // ---------------- Rewarded ----------------
