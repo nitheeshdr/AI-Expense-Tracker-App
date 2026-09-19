@@ -101,8 +101,17 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
           ),
           // Composer
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screenH,
-                AppSpacing.md, AppSpacing.screenH, 96),
+            // Fixed bottom padding (96) didn't account for the device's own
+            // gesture-nav safe-area inset, so on devices with a tall inset
+            // the composer sat behind the floating nav bar instead of above
+            // it. Matches the nav bar's own placement math in home_shell.dart
+            // (bar height 60 + its bottom margin 22) plus the safe inset and
+            // a small gap, so the two never touch on any device.
+            padding: EdgeInsets.fromLTRB(
+                AppSpacing.screenH,
+                AppSpacing.md,
+                AppSpacing.screenH,
+                MediaQuery.paddingOf(context).bottom + 22 + 60 + 16),
             child: Row(
               children: [
                 Expanded(

@@ -45,6 +45,14 @@ class AdsManager {
     _loadRewarded();
   }
 
+  /// Retries a failed ad load after a short delay instead of leaving that ad
+  /// slot permanently empty for the rest of the session — a single load
+  /// failure (e.g. a transient network hiccup) shouldn't stop all future
+  /// requests for that ad type.
+  void _retryLoad(VoidCallback load) {
+    Future.delayed(const Duration(seconds: 30), load);
+  }
+
   // ---------------- Interstitial ----------------
   void _loadInterstitial() {
     InterstitialAd.load(
@@ -70,6 +78,7 @@ class AdsManager {
         onAdFailedToLoad: (err) {
           _interstitial = null;
           debugPrint('Interstitial failed: ${err.message}');
+          _retryLoad(_loadInterstitial);
         },
       ),
     );
@@ -162,6 +171,7 @@ class AdsManager {
         onAdFailedToLoad: (err) {
           _rewarded = null;
           debugPrint('Rewarded failed: ${err.message}');
+          _retryLoad(_loadRewarded);
         },
       ),
     );

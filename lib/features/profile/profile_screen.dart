@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../app/providers.dart';
 import '../../core/design/spacing.dart';
@@ -174,20 +175,24 @@ class ProfileScreen extends ConsumerWidget {
           _GroupLabel('Privacy'),
           Card(
             child: Column(children: [
-              // Plain Material Switch, NOT LiquidGlassSwitch: re-tested on
-              // request and it turned out worse than the earlier
-              // black-screen-on-scroll bug — scrolling this screen with it
-              // in place randomly reset navigation back to the Home tab
-              // (confirmed reproducible; the same scroll on Budgets, which
-              // has no LiquidGlassSwitch, was unaffected). Not safe here.
+              // Plain Material Switch, NOT LiquidGlassSwitch: re-tested twice
+              // more (once bare, once with ScrollConfiguration's overscroll
+              // disabled — the fix that resolved the analogous black-screen
+              // bug elsewhere). Both times, scrolling this screen with it in
+              // place still reset the shell's tab state back to Home
               ListTile(
                 leading: const Icon(Icons.fingerprint),
                 title: const Text('App lock'),
                 subtitle: const Text('Biometric / device credential on open'),
-                trailing: Switch(
-                  activeThumbColor: cs.primary,
-                  value: s.appLockEnabled,
-                  onChanged: (v) => _toggleAppLock(context, ref, v),
+                trailing: Align(
+                  alignment: Alignment.center,
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: LiquidGlassSwitch(
+                    activeColor: cs.primary,
+                    value: s.appLockEnabled,
+                    onChanged: (v) => _toggleAppLock(context, ref, v),
+                  ),
                 ),
                 onTap: () => _toggleAppLock(context, ref, !s.appLockEnabled),
               ),
@@ -195,11 +200,16 @@ class ProfileScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.visibility_off_outlined),
                 title: const Text('Hide balances'),
-                trailing: Switch(
-                  activeThumbColor: cs.primary,
-                  value: s.hideBalances,
-                  onChanged: (v) =>
-                      ctrl.update((x) => x.copyWith(hideBalances: v)),
+                trailing: Align(
+                  alignment: Alignment.center,
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: LiquidGlassSwitch(
+                    activeColor: cs.primary,
+                    value: s.hideBalances,
+                    onChanged: (v) =>
+                        ctrl.update((x) => x.copyWith(hideBalances: v)),
+                  ),
                 ),
                 onTap: () =>
                     ctrl.update((x) => x.copyWith(hideBalances: !s.hideBalances)),
@@ -208,11 +218,16 @@ class ProfileScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.vibration_outlined),
                 title: const Text('Haptics'),
-                trailing: Switch(
-                  activeThumbColor: cs.primary,
-                  value: s.hapticsEnabled,
-                  onChanged: (v) =>
-                      ctrl.update((x) => x.copyWith(hapticsEnabled: v)),
+                trailing: Align(
+                  alignment: Alignment.center,
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: LiquidGlassSwitch(
+                    activeColor: cs.primary,
+                    value: s.hapticsEnabled,
+                    onChanged: (v) =>
+                        ctrl.update((x) => x.copyWith(hapticsEnabled: v)),
+                  ),
                 ),
                 onTap: () => ctrl
                     .update((x) => x.copyWith(hapticsEnabled: !s.hapticsEnabled)),
@@ -229,7 +244,7 @@ class ProfileScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 2.1.2 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 2.1.3 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),

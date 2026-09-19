@@ -227,9 +227,10 @@ class _HomeShellState extends ConsumerState<HomeShell>
   // via the floating AI button, not a bar destination) is open.
   int _lastMainTab = 0;
 
-  // Page 2 (AI) and page 5 (Profile) are reached via floating buttons, not
-  // the nav bar, so neither should be treated as the bar's "selected" tab.
-  static bool _isSideTab(int i) => i == 2 || i == 5;
+  // Page 5 (Profile) is reached via a floating button, not the nav bar,
+  // so it should never be treated as the bar's "selected" tab. AI (page 2)
+  // is now a real nav bar destination.
+  static bool _isSideTab(int i) => i == 5;
 
   void _openTab(int i) {
     Haptics.selection();
@@ -367,9 +368,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
                     barHeight +
                     AppSpacing.md,
                 child: LiquidGlassFab(
-                  heroTag: 'aiFab',
-                  onPressed: () => _openTab(2),
-                  icon: Icons.auto_awesome,
+                  heroTag: 'addFab',
+                  onPressed: _openActions,
+                  icon: Icons.add,
                   foregroundColor: scheme.primary,
                   style: LiquidGlassFab.defaultStyle.copyWith(
                     appearance: LiquidGlassFab.defaultStyle.appearance.copyWith(
@@ -464,13 +465,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
                 ),
               ),
               selectedIndex: _isSideTab(_index) ? _lastMainTab : _index,
-              onChanged: (i) {
-                if (i == 2) {
-                  _openActions();
-                  return;
-                }
-                _openTab(i);
-              },
+              onChanged: _openTab,
               items: const [
                 LiquidGlassTabBarItem(
                   icon: Icons.home_outlined,
@@ -483,9 +478,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
                   label: 'Activity',
                 ),
                 LiquidGlassTabBarItem(
-                  icon: Icons.add_circle_outline,
-                  selectedIcon: Icons.add_circle,
-                  label: 'Add',
+                  icon: Icons.auto_awesome_outlined,
+                  selectedIcon: Icons.auto_awesome,
+                  label: 'AI',
                 ),
                 LiquidGlassTabBarItem(
                   icon: Icons.savings_outlined,

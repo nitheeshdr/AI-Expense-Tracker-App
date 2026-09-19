@@ -68,34 +68,31 @@ class _BannerAdCardState extends State<BannerAdCard> {
             AdsManager.instance.isAdFreeActive) {
           return const SizedBox.shrink();
         }
-        return Container(
+        return Card(
           margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          padding: const EdgeInsets.only(top: 4),
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(AppRadii.md),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10, bottom: 2),
-                  child: Text('Sponsored',
-                      style: TextStyle(
-                          fontSize: 9,
-                          letterSpacing: 0.4,
-                          color: cs.onSurfaceVariant)),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 10, bottom: 2),
+                    child: Text('Sponsored',
+                        style: TextStyle(
+                            fontSize: 9,
+                            letterSpacing: 0.4,
+                            color: cs.onSurfaceVariant)),
+                  ),
                 ),
-              ),
-              SizedBox(
-                width: _size!.width.toDouble(),
-                height: _size!.height.toDouble(),
-                child: AdWidget(ad: _ad!),
-              ),
-            ],
+                SizedBox(
+                  width: _size!.width.toDouble(),
+                  height: _size!.height.toDouble(),
+                  child: AdWidget(ad: _ad!),
+                ),
+              ],
+            ),
           ),
         );
       },

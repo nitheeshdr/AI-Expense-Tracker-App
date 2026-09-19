@@ -21,6 +21,18 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.3', 'Sep 2026', [
+    'Light theme by default for new installs',
+    'Watch a short ad to go completely ad-free for 1 hour',
+    'Fixed the system back button exiting the app instead of returning to Home from another tab',
+    'AI assistant is now a full nav bar tab; Add moved to the floating "+" button',
+    'AI assistant\'s message box no longer overlaps the nav bar',
+    'Budgets\' "+" button now matches the floating action button\'s glass style exactly',
+    'Redesigned onboarding with the app logo, feature highlights and a premium look',
+    'Nav bar and floating buttons share the same glass tint in both themes',
+    'Ads that fail to load now retry automatically instead of going silent for the session',
+    'Sponsored cards now match the app\'s card style exactly',
+  ]),
   _Release('2.1.2', 'Sep 2026', [
     'Real liquid-glass look for the floating nav bar, sheets, dialogs, and status filters',
     'Fixed the app always returning to the last-open screen after being backgrounded — it now reopens on Home',
@@ -106,7 +118,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.2 (build 7)',
+                Text('Version 2.1.3 (build 8)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -144,7 +156,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.2',
+                  applicationVersion: '2.1.3',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

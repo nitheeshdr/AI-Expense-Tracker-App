@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../services/ads/ad_config.dart';
@@ -86,12 +86,9 @@ class _NativeAdCardState extends State<NativeAdCard> {
     if (!_loaded || _ad == null || AdsManager.instance.isAdFreeActive) {
       return const SizedBox.shrink();
     }
-    return Container(
+    return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: c.hairline),
-      ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

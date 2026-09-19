@@ -60,6 +60,11 @@ class BudgetsScreen extends ConsumerWidget {
                   'Budgets',
                   style: AppType.h1.copyWith(color: c.textPrimary),
                 ),
+                // Same "+" icon and genuinely-transparent glass as the
+                // Home screen's Add FAB — not overriding `shape` here
+                // either, so it gets the exact same default pill-with-
+                // optical-rim look the FAB gets rather than a flatter,
+                // borderless circle.
                 LiquidGlassButton(
                   onPressed: () => showBudgetEditor(context, ref),
                   height: 44,
@@ -68,12 +73,12 @@ class BudgetsScreen extends ConsumerWidget {
                   icon: Icons.add,
                   foregroundColor: c.accent,
                   style: LiquidGlassButton.defaultStyle.copyWith(
-                    shape: const LiquidGlassShape.roundedRectangle(
-                      cornerRadius: 22,
-                      borderWidth: 0,
-                    ),
                     appearance: LiquidGlassButton.defaultStyle.appearance
-                        .copyWith(color: c.accentSoft),
+                        .copyWith(
+                          color: (c.isDark ? Colors.black : Colors.white)
+                              .withValues(alpha: c.isDark ? 0.3 : 0.22),
+                          blur: const LiquidGlassBlur(sigmaX: 8, sigmaY: 8),
+                        ),
                   ),
                 ),
               ],
