@@ -403,15 +403,13 @@ class _HomeShellState extends ConsumerState<HomeShell>
                   child: LiquidGlassLens(
                     style: LiquidGlassStyle(
                       shape: _navPillShape(barHeight / 2),
-                      // More glass in dark mode — lower tint, heavier blur —
-                      // a near-opaque black capsule read as a flat panel
-                      // rather than frosted glass against dark pages.
+                      // Same genuinely-transparent glass as the AI/profile
+                      // FABs — a light tint, real refraction of the page
+                      // behind doing the rest of the work.
                       appearance: LiquidGlassAppearance(
                         color: (isDark ? Colors.black : Colors.white)
-                            .withValues(alpha: isDark ? 0.5 : 0.72),
-                        blur: isDark
-                            ? const LiquidGlassBlur(sigmaX: 20, sigmaY: 20)
-                            : const LiquidGlassBlur(sigmaX: 14, sigmaY: 14),
+                            .withValues(alpha: isDark ? 0.3 : 0.22),
+                        blur: const LiquidGlassBlur(sigmaX: 8, sigmaY: 8),
                         shadow: const LiquidGlassShadow(blur: 9, opacity: 0.13),
                       ),
                       refraction: const LiquidGlassRefraction(
