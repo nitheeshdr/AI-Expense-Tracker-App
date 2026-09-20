@@ -6,6 +6,7 @@ import '../core/design/spacing.dart';
 import '../core/settings/settings.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/shell/home_shell.dart';
+import '../services/analytics/firebase_service.dart';
 
 /// Root navigator, exposed so non-widget singletons (e.g. `AdsManager`,
 /// which needs to show a dialog after an interstitial closes) can reach a
@@ -18,6 +19,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final onboarded = ref.read(settingsProvider).onboarded;
   return GoRouter(
     navigatorKey: rootNavigatorKey,
+    observers: [AppFirebase.routeObserver],
     initialLocation: onboarded ? '/home' : '/onboarding',
     routes: [
       _fade('/onboarding', const OnboardingScreen()),

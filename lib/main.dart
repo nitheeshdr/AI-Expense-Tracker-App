@@ -8,10 +8,13 @@ import 'app/app.dart';
 import 'core/db/app_database.dart';
 import 'core/settings/settings.dart';
 import 'services/ads/ads_manager.dart';
+import 'services/analytics/firebase_service.dart';
 import 'services/notifications/notification_service.dart';
+import 'services/notifications/spend_reminder_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppFirebase.init();
   // Compile the liquid-glass shaders up front so the nav bar's glass pill
   // is real glass on its first frame instead of frosted for a moment.
   unawaited(LiquidGlassShaders.ensureLoaded());
@@ -21,6 +24,13 @@ Future<void> main() async {
   // settings before the first frame so the correct theme/route show instantly.
   await AppDatabase.instance.database;
   await container.read(settingsProvider.notifier).load();
+
+  await SpendReminderService.instance.init();
+  final settings = container.read(settingsProvider);
+  if (settings.spendRemindersEnabled) {
+    unawaited(SpendReminderService.instance
+        .schedule(Duration(minutes: settings.reminderIntervalMinutes)));
+  }
 
   // Initialize AdMob in the background — it makes a network call to Google's
   // ad servers that can take many seconds (or longer on a slow connection),

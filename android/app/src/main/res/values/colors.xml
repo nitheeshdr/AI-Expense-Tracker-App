@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Light-mode colors for home-screen widgets, matching the app's Material 3
+     blue seed (0xFF2F7CF6) theme. Overridden in values-night for dark mode. -->
+<resources>
+    <color name="widget_background">#FFFFFF</color>
+    <color name="widget_border">#1A1C1E1A</color>
+    <color name="widget_text_primary">#1A1C1E</color>
+    <color name="widget_text_secondary">#5F6368</color>
+    <color name="widget_accent">#2F7CF6</color>
+    <color name="widget_track">#E8ECF3</color>
+    <color name="widget_on_accent">#FFFFFF</color>
+    <color name="widget_on_accent_secondary">#CCFFFFFF</color>
+</resources>

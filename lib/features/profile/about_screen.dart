@@ -21,6 +21,13 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.4', 'Sep 2026', [
+    'New: two more home-screen widgets — monthly budget progress and a "Net this month" summary',
+    'New: a one-tap "Add expense" home-screen widget',
+    'Home-screen widgets now properly follow light/dark mode instead of a fixed dark look',
+    'New: periodic notifications with your spending — today\'s total, month-to-date, or budget remaining',
+    'Crash reporting and anonymous usage analytics added (no transaction data ever leaves your device)',
+  ]),
   _Release('2.1.3', 'Sep 2026', [
     'Light theme by default for new installs',
     'Watch a short ad to go completely ad-free for 1 hour',
@@ -118,7 +125,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.3 (build 8)',
+                Text('Version 2.1.4 (build 9)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -156,7 +163,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.3',
+                  applicationVersion: '2.1.4',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

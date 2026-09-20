@@ -35,17 +35,50 @@
             </intent-filter>
         </activity>
 
-        <!-- Home-screen widget -->
+        <!-- Home-screen widgets -->
         <receiver
             android:name=".ExpenseWidgetProvider"
             android:exported="true"
-            android:label="AI Expense Tracker">
+            android:label="Today &amp; month spend">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/expense_widget_info"/>
+        </receiver>
+        <receiver
+            android:name=".BudgetWidgetProvider"
+            android:exported="true"
+            android:label="Budget progress">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budget_widget_info"/>
+        </receiver>
+        <receiver
+            android:name=".NetWidgetProvider"
+            android:exported="true"
+            android:label="Net this month">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/net_widget_info"/>
+        </receiver>
+        <receiver
+            android:name=".QuickAddWidgetProvider"
+            android:exported="true"
+            android:label="Quick add expense">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_widget_info"/>
         </receiver>
 
         <!-- Don't delete the meta-data below.

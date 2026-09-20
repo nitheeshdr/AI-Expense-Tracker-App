@@ -21,6 +21,8 @@ class AppSettings {
   final bool hideBalances;
   final bool appLockEnabled;
   final double monthlyBudget;
+  final bool spendRemindersEnabled;
+  final int reminderIntervalMinutes;
 
   const AppSettings({
     this.themeMode = AppThemeMode.light,
@@ -32,6 +34,8 @@ class AppSettings {
     this.hideBalances = false,
     this.appLockEnabled = false,
     this.monthlyBudget = 45000,
+    this.spendRemindersEnabled = true,
+    this.reminderIntervalMinutes = 60,
   });
 
   /// Back-compat helper used where a binary dark/light is needed.
@@ -54,6 +58,8 @@ class AppSettings {
     bool? hideBalances,
     bool? appLockEnabled,
     double? monthlyBudget,
+    bool? spendRemindersEnabled,
+    int? reminderIntervalMinutes,
   }) =>
       AppSettings(
         themeMode: themeMode ?? this.themeMode,
@@ -65,6 +71,10 @@ class AppSettings {
         hideBalances: hideBalances ?? this.hideBalances,
         appLockEnabled: appLockEnabled ?? this.appLockEnabled,
         monthlyBudget: monthlyBudget ?? this.monthlyBudget,
+        spendRemindersEnabled:
+            spendRemindersEnabled ?? this.spendRemindersEnabled,
+        reminderIntervalMinutes:
+            reminderIntervalMinutes ?? this.reminderIntervalMinutes,
       );
 }
 
@@ -81,6 +91,8 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kAppLock = 'appLock';
   static const _kBudget = 'monthlyBudget';
   static const _kGroqKey = 'groq_api_key';
+  static const _kSpendReminders = 'spendRemindersEnabled';
+  static const _kReminderInterval = 'reminderIntervalMinutes';
 
   final _secure = const FlutterSecureStorage();
   SharedPreferences? _prefs;
@@ -104,6 +116,8 @@ class SettingsController extends Notifier<AppSettings> {
       hideBalances: prefs.getBool(_kHideBalances) ?? false,
       appLockEnabled: prefs.getBool(_kAppLock) ?? false,
       monthlyBudget: prefs.getDouble(_kBudget) ?? 45000,
+      spendRemindersEnabled: prefs.getBool(_kSpendReminders) ?? true,
+      reminderIntervalMinutes: prefs.getInt(_kReminderInterval) ?? 60,
     );
     Haptics.enabled = loaded.hapticsEnabled;
     state = loaded;
@@ -120,6 +134,8 @@ class SettingsController extends Notifier<AppSettings> {
     await prefs.setBool(_kHideBalances, s.hideBalances);
     await prefs.setBool(_kAppLock, s.appLockEnabled);
     await prefs.setDouble(_kBudget, s.monthlyBudget);
+    await prefs.setBool(_kSpendReminders, s.spendRemindersEnabled);
+    await prefs.setInt(_kReminderInterval, s.reminderIntervalMinutes);
     Haptics.enabled = s.hapticsEnabled;
   }
 

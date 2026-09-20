@@ -211,6 +211,8 @@ class _HomeShellState extends ConsumerState<HomeShell>
     if (!mounted || uri == null) return;
     if (uri.host == 'add' || uri.path.contains('add')) {
       openAddExpense(context, ref);
+    } else if (uri.host == 'budgets') {
+      _openTab(3);
     }
   }
 
@@ -219,6 +221,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
     HomeWidgetService.update(
       repo: ref.read(transactionRepoProvider),
       currency: s.currency,
+      monthlyBudget: s.monthlyBudget,
     );
   }
 

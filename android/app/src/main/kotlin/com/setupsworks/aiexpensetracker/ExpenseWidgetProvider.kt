@@ -30,13 +30,6 @@ class ExpenseWidgetProvider : android.appwidget.AppWidgetProvider() {
                 setTextViewText(R.id.widget_income_value, income)
                 setTextViewText(R.id.widget_currency, currency)
 
-                // Tint the Add button to match the app's accent color.
-                val accentHex = prefs.getString("accent", "#FF7C6BFF") ?: "#FF7C6BFF"
-                try {
-                    val accent = android.graphics.Color.parseColor(accentHex)
-                    setInt(R.id.widget_add, "setBackgroundColor", accent)
-                } catch (_: Exception) { }
-
                 // Open app on tap
                 val openApp = HomeWidgetLaunchIntent.getActivity(
                     context, MainActivity::class.java
