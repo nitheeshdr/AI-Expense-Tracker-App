@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.5', 'Sep 2026', [
+    'Added Meta Audience Network as an AdMob mediation bidding partner for better ad fill and rates',
+  ]),
   _Release('2.1.4', 'Sep 2026', [
     'New: two more home-screen widgets — monthly budget progress and a "Net this month" summary',
     'New: a one-tap "Add expense" home-screen widget',
@@ -125,7 +128,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.4 (build 9)',
+                Text('Version 2.1.5 (build 10)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -163,7 +166,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.4',
+                  applicationVersion: '2.1.5',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
