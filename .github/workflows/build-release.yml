@@ -17,6 +17,15 @@ on:
 permissions:
   contents: write
 
+# Tagging a commit that's already on main fires two push events (one for
+# the branch, one for the tag) for identical code. Grouping by commit SHA
+# and cancelling the older run means only the later one — almost always
+# the tag push, which does the full release — actually finishes, instead
+# of wasting ~10 minutes rebuilding the same commit twice.
+concurrency:
+  group: build-release-${{ github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Signed Flutter App
