@@ -32,6 +32,12 @@ class AppNotifications {
     description: 'Ongoing today-spending summary with quick actions',
     importance: Importance.low,
   );
+  static const _announcementChannel = AndroidNotificationChannel(
+    'announcements',
+    'Announcements',
+    description: 'Updates and announcements sent from the developer',
+    importance: Importance.high,
+  );
 
   Future<void> init() async {
     if (_ready) return;
@@ -47,6 +53,7 @@ class AppNotifications {
           AndroidFlutterLocalNotificationsPlugin>();
       await android?.createNotificationChannel(_alertChannel);
       await android?.createNotificationChannel(_liveChannel);
+      await android?.createNotificationChannel(_announcementChannel);
       _ready = true;
     } catch (_) {
       _ready = false;
@@ -82,6 +89,29 @@ class AppNotifications {
         'transactions',
         'Transaction alerts',
         channelDescription: 'New transaction captured',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+    );
+    await _plugin.show(
+      id: _id++ & 0x7fffffff,
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
+  }
+
+  /// Shows a Cloud Messaging push while the app is in the foreground.
+  /// Android auto-displays notification-payload messages when the app is
+  /// backgrounded/terminated, but not while it's open — this covers that gap.
+  Future<void> showRemote(String title, String body) async {
+    if (!_ready) await init();
+    if (!_ready) return;
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'announcements',
+        'Announcements',
+        channelDescription: 'Updates and announcements sent from the developer',
         importance: Importance.high,
         priority: Priority.high,
       ),

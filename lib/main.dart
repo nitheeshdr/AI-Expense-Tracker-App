@@ -8,6 +8,7 @@ import 'app/app.dart';
 import 'core/db/app_database.dart';
 import 'core/settings/settings.dart';
 import 'services/ads/ads_manager.dart';
+import 'services/analytics/fcm_service.dart';
 import 'services/analytics/firebase_service.dart';
 import 'services/notifications/notification_service.dart';
 import 'services/notifications/spend_reminder_service.dart';
@@ -49,6 +50,7 @@ Future<void> main() async {
   // notification permission before anything can call into the SMS plugin
   // avoids that collision entirely.
   await AppNotifications.instance.requestPermission();
+  unawaited(FcmService.instance.init());
 
   runApp(
     UncontrolledProviderScope(

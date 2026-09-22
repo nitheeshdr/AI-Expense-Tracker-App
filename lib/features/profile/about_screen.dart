@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.6', 'Sep 2026', [
+    'Added support for push notifications and announcements',
+  ]),
   _Release('2.1.5', 'Sep 2026', [
     'Added Meta Audience Network as an AdMob mediation bidding partner for better ad fill and rates',
   ]),
@@ -128,7 +131,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.5 (build 10)',
+                Text('Version 2.1.6 (build 11)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -166,7 +169,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.5',
+                  applicationVersion: '2.1.6',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
