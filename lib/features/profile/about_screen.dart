@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('2.1.7', 'Sep 2026', [
+    'Minor release management fixes — no user-facing changes',
+  ]),
   _Release('2.1.6', 'Sep 2026', [
     'Added support for push notifications and announcements',
   ]),
@@ -131,7 +134,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 2.1.6 (build 11)',
+                Text('Version 2.1.7 (build 12)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -169,7 +172,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '2.1.6',
+                  applicationVersion: '2.1.7',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
