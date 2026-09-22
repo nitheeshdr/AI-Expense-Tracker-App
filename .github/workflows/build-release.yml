@@ -10,6 +10,13 @@ on:
     branches:
       - main
 
+# The default GITHUB_TOKEN is read-only unless a workflow explicitly asks
+# for more — without this, the "latest-build" rolling tag/release steps
+# fail with a 403 on every push to main (the actual app build still
+# succeeds; only that bookkeeping step was broken).
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Signed Flutter App
