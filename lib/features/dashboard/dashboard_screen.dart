@@ -202,12 +202,7 @@ class _DashboardList extends ConsumerWidget {
               _Feature(
                 'Scan receipt',
                 Icons.document_scanner_outlined,
-                () => openComingSoon(
-                  context,
-                  ref,
-                  'Receipt Scanning',
-                  Icons.document_scanner_outlined,
-                ),
+                () => openScanReceipt(context, ref),
               ),
               _Feature('Profile', Icons.person_outline, () => onOpenTab(4)),
             ],

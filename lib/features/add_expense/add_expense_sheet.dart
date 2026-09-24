@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../app/providers.dart';
 import '../../core/data/categories.dart';
@@ -22,42 +23,86 @@ Future<void> openAddExpense(
   WidgetRef ref, {
   bool income = false,
   TransactionEntity? edit,
+  double? prefillAmount,
+  String? prefillMerchant,
 }) {
   return showAppSheet<void>(
     context,
-    builder: (context) => _AddExpenseSheet(income: income, edit: edit),
+    builder: (context) => _AddExpenseSheet(
+      income: income,
+      edit: edit,
+      prefillAmount: prefillAmount,
+      prefillMerchant: prefillMerchant,
+    ),
   );
 }
 
-/// A "coming soon" sheet for deferred import/scan actions.
-Future<void> openComingSoon(
-  BuildContext context,
-  WidgetRef ref,
-  String title,
-  IconData icon,
-) {
-  return showAppSheet<void>(
-    context,
-    builder: (context) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 44, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: AppSpacing.lg),
-        SheetHeader(
-          title: title,
-          subtitle:
-              'This feature is on the roadmap. For now, add transactions manually or import them from your SMS.',
-        ),
-        AppButton(label: 'Got it', onTap: () => Navigator.of(context).pop()),
-      ],
+/// Lets the user photograph or pick a receipt image, runs on-device OCR, and
+/// opens the add-expense sheet prefilled with whatever amount/merchant it
+/// could read. Falls back to the plain empty sheet if OCR finds nothing
+/// usable — scanning is a shortcut, not a hard requirement.
+Future<void> openScanReceipt(BuildContext context, WidgetRef ref) async {
+  final source = await showModalBottomSheet<ImageSource>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: const Text('Take photo'),
+            onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Choose from gallery'),
+            onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+          ),
+        ],
+      ),
     ),
+  );
+  if (source == null || !context.mounted) return;
+
+  final image =
+      await ImagePicker().pickImage(source: source, imageQuality: 85);
+  if (image == null || !context.mounted) return;
+
+  final messenger = ScaffoldMessenger.of(context);
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+  final result = await ref.read(ocrServiceProvider).scan(image.path);
+  if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+  if (!context.mounted) return;
+
+  if (result == null) {
+    messenger.showSnackBar(const SnackBar(
+      content:
+          Text("Couldn't read an amount from that receipt — enter it manually."),
+    ));
+    return openAddExpense(context, ref);
+  }
+  return openAddExpense(
+    context,
+    ref,
+    prefillAmount: result.amount,
+    prefillMerchant: result.merchant,
   );
 }
 
 class _AddExpenseSheet extends ConsumerStatefulWidget {
   final bool income;
   final TransactionEntity? edit;
-  const _AddExpenseSheet({required this.income, this.edit});
+  final double? prefillAmount;
+  final String? prefillMerchant;
+  const _AddExpenseSheet({
+    required this.income,
+    this.edit,
+    this.prefillAmount,
+    this.prefillMerchant,
+  });
 
   @override
   ConsumerState<_AddExpenseSheet> createState() => _AddExpenseSheetState();
@@ -66,14 +111,15 @@ class _AddExpenseSheet extends ConsumerStatefulWidget {
 class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   late TxnType _type = widget.income ? TxnType.income : TxnType.expense;
   String _amount = '';
-  late final TextEditingController _merchant =
-      TextEditingController(text: widget.edit?.merchant ?? '');
+  late final TextEditingController _merchant = TextEditingController(
+      text: widget.edit?.merchant ?? widget.prefillMerchant ?? '');
   late final TextEditingController _note =
       TextEditingController(text: widget.edit?.note ?? '');
   late String _category =
       widget.edit?.category ?? (widget.income ? 'Salary' : 'Food');
   late final DateTime _date = widget.edit?.date ?? DateTime.now();
   String _method = 'UPI';
+  bool get _fromScan => widget.edit == null && widget.prefillAmount != null;
 
   bool get _isEdit => widget.edit != null;
 
@@ -85,8 +131,12 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
       _amount = a.toStringAsFixed(a.truncateToDouble() == a ? 0 : 2);
       _type = widget.edit!.type;
       _method = widget.edit!.paymentMethod ?? 'UPI';
+    } else if (widget.prefillAmount != null) {
+      final a = widget.prefillAmount!;
+      _amount = a.toStringAsFixed(a.truncateToDouble() == a ? 0 : 2);
     }
     _merchant.addListener(_autoCategorize);
+    if (_fromScan) _autoCategorize();
   }
 
   void _autoCategorize() {
@@ -137,6 +187,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
           merchant:
               _merchant.text.trim().isEmpty ? _category : _merchant.text.trim(),
           date: _date,
+          source: _fromScan ? TxnSource.receipt : TxnSource.manual,
         );
     final txn = base.copyWith(
       amount: _value,

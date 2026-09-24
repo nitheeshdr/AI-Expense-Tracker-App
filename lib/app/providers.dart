@@ -7,6 +7,7 @@ import '../services/ads/ads_manager.dart';
 import '../services/groq/groq_client.dart';
 import '../services/groq/groq_service.dart';
 import '../services/integrations/integrations.dart';
+import '../services/integrations/receipt_scanner.dart';
 
 // --- Repositories ---
 final transactionRepoProvider =
@@ -27,7 +28,11 @@ final groqServiceProvider = Provider<GroqService>((ref) => GroqService(
 
 // Integration stubs (swap impls in later phases without touching consumers).
 final smsReaderProvider = Provider<SmsReader>((ref) => StubSmsReader());
-final ocrServiceProvider = Provider<OcrService>((ref) => StubOcrService());
+final ocrServiceProvider = Provider<OcrService>((ref) {
+  final service = MlKitOcrService();
+  ref.onDispose(service.dispose);
+  return service;
+});
 final biometricProvider =
     Provider<BiometricService>((ref) => StubBiometricService());
 final notificationProvider =

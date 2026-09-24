@@ -261,9 +261,9 @@ class _HomeShellState extends ConsumerState<HomeShell>
           Navigator.of(sheetContext).pop();
           showSmsImportSheet(context, ref);
         },
-        onComingSoon: (title) {
+        onScanReceipt: () {
           Navigator.of(sheetContext).pop();
-          openComingSoon(context, ref, title, Icons.bolt_outlined);
+          openScanReceipt(context, ref);
         },
       ),
     );
@@ -508,13 +508,13 @@ class _ActionsSheet extends StatelessWidget {
   final VoidCallback onAddExpense;
   final VoidCallback onAddIncome;
   final VoidCallback onImportSms;
-  final ValueChanged<String> onComingSoon;
+  final VoidCallback onScanReceipt;
 
   const _ActionsSheet({
     required this.onAddExpense,
     required this.onAddIncome,
     required this.onImportSms,
-    required this.onComingSoon,
+    required this.onScanReceipt,
   });
 
   @override
@@ -550,8 +550,8 @@ class _ActionsSheet extends StatelessWidget {
           icon: Icons.document_scanner_outlined,
           color: cs.tertiary,
           title: 'Scan receipt',
-          subtitle: 'Coming soon',
-          onTap: () => onComingSoon('Receipt Scanning'),
+          subtitle: 'Snap or pick a photo, auto-fill the amount',
+          onTap: onScanReceipt,
         ),
         const SizedBox(height: AppSpacing.sm),
       ],
