@@ -68,6 +68,17 @@ android {
             } else {
                 signingConfig = signingConfigs.getByName("debug")
             }
+            // Explicit now that we ship our own proguard-rules.pro (needed
+            // for the google_mlkit_text_recognition -dontwarn rules) —
+            // isMinifyEnabled/isShrinkResources were previously only on by
+            // Flutter's own implicit default, which doesn't pick up a
+            // custom rules file.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
