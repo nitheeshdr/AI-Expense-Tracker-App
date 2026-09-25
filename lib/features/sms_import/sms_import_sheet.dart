@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/design/spacing.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_sheet.dart';
@@ -67,6 +68,16 @@ class _SmsImportSheet extends ConsumerWidget {
               ? null
               : () => ref.read(smsImportProvider.notifier).importInbox(),
         ),
+        if (state.phase == SmsImportPhase.done) ...[
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(
+            label: 'Deep scan (up to 1 year) — watch an ad',
+            icon: Icons.play_circle_outline,
+            kind: AppButtonKind.secondary,
+            loading: busy,
+            onTap: busy ? null : () => _deepScan(context, ref),
+          ),
+        ],
         const SizedBox(height: AppSpacing.sm),
         if (state.phase == SmsImportPhase.done)
           AppButton(
@@ -76,6 +87,23 @@ class _SmsImportSheet extends ConsumerWidget {
           ),
       ],
     );
+  }
+
+  Future<void> _deepScan(BuildContext context, WidgetRef ref) async {
+    final ads = ref.read(adsManagerProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ads.isRewardedReady) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ad not ready yet — try again shortly.')));
+      return;
+    }
+    final earned = await ads.showRewarded();
+    if (!earned) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Watch the full ad to unlock the deep scan.')));
+      return;
+    }
+    await ref.read(smsImportProvider.notifier).importInbox(sinceDays: 365);
   }
 
   IconData _phaseIcon(SmsImportPhase phase) => switch (phase) {

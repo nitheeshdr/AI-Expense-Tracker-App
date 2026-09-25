@@ -52,8 +52,9 @@ class AdConfig {
       _testNativeAndroid, _testNativeIos, _prodNativeAndroid, _prodNativeIos);
 
   /// Show an interstitial at most once every N qualifying actions, and never
-  /// more often than [interstitialMinGap]. Tuned for higher fill while staying
-  /// within AdMob's UX expectations (avoid back-to-back full-screen ads).
-  static const int interstitialEveryNActions = 2;
+  /// more often than [interstitialMinGap]. Lowered from 2 to 1 — interstitial
+  /// impressions were far below the volume the ad's own eCPM justified, and
+  /// [interstitialMinGap] alone already prevents back-to-back full-screen ads.
+  static const int interstitialEveryNActions = 1;
   static const Duration interstitialMinGap = Duration(seconds: 45);
 }

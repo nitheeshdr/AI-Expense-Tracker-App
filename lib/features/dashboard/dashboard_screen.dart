@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../app/providers.dart';
+import '../ai_assistant/ai_controller.dart';
 import '../../core/data/categories.dart';
 import '../../core/data/models.dart';
 import '../../core/design/app_theme.dart';
@@ -243,7 +246,9 @@ class _DashboardList extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: _AiInsightCard(summary: summary)),
+                Expanded(
+                  child: _AiInsightCard(summary: summary, onOpenTab: onOpenTab),
+                ),
               ],
             ),
           ),
@@ -1122,9 +1127,10 @@ class _ImportPrompt extends StatelessWidget {
   }
 }
 
-class _AiInsightCard extends StatelessWidget {
+class _AiInsightCard extends ConsumerWidget {
   final MonthSummary summary;
-  const _AiInsightCard({required this.summary});
+  final ValueChanged<int> onOpenTab;
+  const _AiInsightCard({required this.summary, required this.onOpenTab});
 
   String get _insight {
     if (summary.byCategory.isEmpty) {
@@ -1137,8 +1143,30 @@ class _AiInsightCard extends StatelessWidget {
     return '$share% of your spend is on ${top.category}.';
   }
 
+  Future<void> _watchAdForDeeperReport(
+      BuildContext context, WidgetRef ref) async {
+    final ads = ref.read(adsManagerProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ads.isRewardedReady) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ad not ready yet — try again shortly.')));
+      return;
+    }
+    final earned = await ads.showRewarded();
+    if (!earned) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Watch the full ad to unlock the deeper report.')));
+      return;
+    }
+    onOpenTab(2);
+    unawaited(ref.read(aiControllerProvider.notifier).send(
+        'Give me a detailed breakdown of my spending this month — top '
+        'categories, any unusual patterns, and one concrete suggestion to '
+        'save more.'));
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = AppTheme.of(context);
     return _Card(
       child: Column(
@@ -1171,6 +1199,25 @@ class _AiInsightCard extends StatelessWidget {
             child: Text(
               _insight,
               style: TextStyle(color: c.textPrimary, fontSize: 13, height: 1.4),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          InkWell(
+            onTap: () => _watchAdForDeeperReport(context, ref),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.play_circle_outline, size: 14, color: c.accent),
+                const SizedBox(width: 4),
+                Text(
+                  'Get a deeper report',
+                  style: TextStyle(
+                    color: c.accent,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

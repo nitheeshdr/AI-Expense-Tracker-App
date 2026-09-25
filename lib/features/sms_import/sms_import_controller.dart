@@ -95,7 +95,10 @@ class SmsImportController extends Notifier<SmsImportState> {
     }
   }
 
-  Future<void> importInbox() async {
+  /// [sinceDays] defaults to the reader's own default (180 days / 6 months).
+  /// A larger value is used for the ad-unlocked "deep scan" that looks
+  /// further back for older transactions.
+  Future<void> importInbox({int? sinceDays}) async {
     if (!Platform.isAndroid) {
       state = const SmsImportState(
         phase: SmsImportPhase.unsupported,
@@ -123,7 +126,9 @@ class SmsImportController extends Notifier<SmsImportState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_kGranted, true);
 
-      final txns = await reader.importTransactions();
+      final txns = sinceDays == null
+          ? await reader.importTransactions()
+          : await reader.importTransactions(sinceDays: sinceDays);
       final repo = ref.read(transactionRepoProvider);
       for (final t in txns) {
         await repo.upsert(t);

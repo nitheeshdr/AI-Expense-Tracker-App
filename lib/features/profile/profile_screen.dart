@@ -101,7 +101,7 @@ class ProfileScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.file_download_outlined),
                 title: const Text('Export as CSV'),
-                subtitle: const Text('Share all transactions as a spreadsheet'),
+                subtitle: const Text('Watch a short ad, then share as a spreadsheet'),
                 trailing: const Icon(Icons.ios_share),
                 onTap: () => _exportCsv(context, ref),
               ),
@@ -244,7 +244,7 @@ class ProfileScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 3.0.0 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 3.1.0 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),
@@ -256,7 +256,19 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    final ads = ref.read(adsManagerProvider);
     final messenger = ScaffoldMessenger.of(context);
+    if (!ads.isRewardedReady) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ad not ready yet — try again shortly.')));
+      return;
+    }
+    final earned = await ads.showRewarded();
+    if (!earned) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Watch the full ad to unlock the export.')));
+      return;
+    }
     try {
       final count = await ExportService.instance
           .shareCsv(ref.read(transactionRepoProvider));
