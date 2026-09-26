@@ -58,7 +58,10 @@ class MerchantDetailScreen extends ConsumerWidget {
                   currency: cur,
                   onTap: () => showTransactionDetail(context, ref, txn),
                 ),
-                if (i > 0 && i % 4 == 3) ...[
+                // Spaced out (not denser): tight ad density is a common
+                // cause of AdMob policy strikes and accidental clicks,
+                // both of which put the whole account at risk.
+                if (i > 0 && i % 6 == 5) ...[
                   const NativeAdCard(),
                   const SizedBox(height: AppSpacing.sm),
                 ],

@@ -21,6 +21,12 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.3.2', 'Sep 2026', [
+    'Backed native ad density back off to a safer spacing — packing them too tightly risks AdMob policy strikes and accidental taps, which put the whole account at risk',
+  ]),
+  _Release('3.3.1', 'Sep 2026', [
+    'Fixed banner ads getting stuck rejected by AdMob\'s own "too many requests" guard — the same banner slot appearing on multiple screens was retrying independently on each one at once',
+  ]),
   _Release('3.3.0', 'Sep 2026', [
     'Removed Meta Audience Network from ad mediation for good — ads serve from Google AdMob only',
     'More native ads across Transactions, Merchants, Merchant detail, and now the AI assistant\'s start screen',
@@ -161,7 +167,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.3.0 (build 19)',
+                Text('Version 3.3.2 (build 21)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -199,7 +205,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.3.0',
+                  applicationVersion: '3.3.2',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

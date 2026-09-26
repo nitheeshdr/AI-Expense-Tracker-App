@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../services/ads/ad_config.dart';
+import '../../../services/ads/ad_request_gate.dart';
 import '../../../services/ads/ads_manager.dart';
 import '../../design/spacing.dart';
 
@@ -27,6 +28,18 @@ class _BannerAdCardState extends State<BannerAdCard> {
       return;
     }
     _width = width;
+    // The same banner ad unit ID is reused on several screens, and once a
+    // tab is visited its widgets stay alive underneath (IndexedStack) — so
+    // several BannerAdCards can be requesting/retrying at once. Gate every
+    // attempt through one shared cooldown per ad unit ID so the combined
+    // request rate never trips AdMob's own "too many recently failed
+    // requests" guard, instead of each widget only pacing itself.
+    if (!AdRequestGate.tryAcquire(AdConfig.bannerUnit)) {
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) _load(width);
+      });
+      return;
+    }
     final size = await AdSize.getAnchoredAdaptiveBannerAdSize(
         Orientation.portrait, width);
     if (size == null) return;
