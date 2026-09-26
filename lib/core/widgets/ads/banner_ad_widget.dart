@@ -45,11 +45,10 @@ class _BannerAdCardState extends State<BannerAdCard> {
           debugPrint('Banner failed: ${err.code} ${err.message}');
           // A single failed load (e.g. a transient network hiccup or a
           // no-fill moment) previously left this slot empty forever —
-          // retry as long as the widget is still on screen. Kept above
-          // 30s: Meta Audience Network rejects reloads faster than its own
-          // minimum interval with "Ad was re-loaded too frequently",
-          // which guaranteed no-fill for Meta's bidding slot at 12s.
-          Future.delayed(const Duration(seconds: 32), () {
+          // retry as long as the widget is still on screen. Meta Audience
+          // Network (which rejected fast reloads outright) is no longer in
+          // the mediation stack, so AdMob Network alone can retry quickly.
+          Future.delayed(const Duration(seconds: 8), () {
             if (mounted) _load(_width);
           });
         },

@@ -58,7 +58,7 @@ class MerchantDetailScreen extends ConsumerWidget {
                   currency: cur,
                   onTap: () => showTransactionDetail(context, ref, txn),
                 ),
-                if (i > 0 && i % 6 == 5) ...[
+                if (i > 0 && i % 4 == 3) ...[
                   const NativeAdCard(),
                   const SizedBox(height: AppSpacing.sm),
                 ],

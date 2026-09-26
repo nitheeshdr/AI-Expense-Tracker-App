@@ -21,6 +21,11 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.3.0', 'Sep 2026', [
+    'Removed Meta Audience Network from ad mediation for good — ads serve from Google AdMob only',
+    'More native ads across Transactions, Merchants, Merchant detail, and now the AI assistant\'s start screen',
+    'Faster ad retry after a failed load, now that Meta\'s slower reload requirement no longer applies',
+  ]),
   _Release('3.2.2', 'Sep 2026', [
     'Fixed the "Profile" shortcut on Home\'s Explore grid opening Merchants instead of Profile',
     'Slowed the ad retry interval so it no longer trips Meta Audience Network\'s own rate limit, which was silently blocking Meta\'s bids',
@@ -156,7 +161,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.2.2 (build 18)',
+                Text('Version 3.3.0 (build 19)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -194,7 +199,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.2.2',
+                  applicationVersion: '3.3.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

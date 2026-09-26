@@ -47,14 +47,13 @@ class AdsManager {
 
   /// Retries a failed ad load after a short delay instead of leaving that ad
   /// slot permanently empty for the rest of the session — a single load
-  /// failure (e.g. a transient network hiccup) shouldn't stop all future
-  /// requests for that ad type. Kept above 30s: Meta Audience Network
-  /// enforces its own minimum reload interval per placement and rejects
-  /// faster requests outright with "Ad was re-loaded too frequently",
-  /// which showed up as a guaranteed no-fill for Meta's bidding slot when
-  /// this was 12s (confirmed via Ad Inspector's per-request error detail).
+  /// failure (e.g. a transient network hiccup or no-fill) shouldn't stop all
+  /// future requests for that ad type. Meta Audience Network is no longer in
+  /// the mediation stack (it enforced its own ~30s minimum reload interval
+  /// and rejected faster retries outright), so AdMob Network alone can be
+  /// retried quickly again.
   void _retryLoad(VoidCallback load) {
-    Future.delayed(const Duration(seconds: 32), load);
+    Future.delayed(const Duration(seconds: 8), load);
   }
 
   // ---------------- Interstitial ----------------

@@ -6,6 +6,7 @@ import '../../core/design/app_theme.dart';
 import '../../core/design/spacing.dart';
 import '../../core/design/typography.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
+import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/pressable.dart';
@@ -213,6 +214,8 @@ class _Empty extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppType.bodySm.copyWith(color: c.textSecondary),
             ),
+            const SizedBox(height: AppSpacing.xl),
+            const NativeAdCard(),
           ],
         ),
       ),
