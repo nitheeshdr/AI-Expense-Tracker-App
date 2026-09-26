@@ -70,8 +70,11 @@ class _NativeAdCardState extends State<NativeAdCard> {
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
           // A single failed load previously left this slot empty forever —
-          // retry as long as the widget is still on screen.
-          Future.delayed(const Duration(seconds: 12), () {
+          // retry as long as the widget is still on screen. Kept above
+          // 30s: Meta Audience Network rejects reloads faster than its own
+          // minimum interval with "Ad was re-loaded too frequently",
+          // which guaranteed no-fill for Meta's bidding slot at 12s.
+          Future.delayed(const Duration(seconds: 32), () {
             if (mounted) _load();
           });
         },

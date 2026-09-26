@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.2.2', 'Sep 2026', [
+    'Fixed the "Profile" shortcut on Home\'s Explore grid opening Merchants instead of Profile',
+    'Slowed the ad retry interval so it no longer trips Meta Audience Network\'s own rate limit, which was silently blocking Meta\'s bids',
+  ]),
   _Release('3.2.1', 'Sep 2026', [
     'Restored Meta Audience Network as an AdMob bidding partner for better ad fill and rates, now that the real mediation floor issue is fixed',
   ]),
@@ -152,7 +156,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.2.1 (build 17)',
+                Text('Version 3.2.2 (build 18)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -190,7 +194,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.2.1',
+                  applicationVersion: '3.2.2',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

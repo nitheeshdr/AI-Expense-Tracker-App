@@ -208,7 +208,7 @@ class _DashboardList extends ConsumerWidget {
                 Icons.document_scanner_outlined,
                 () => openScanReceipt(context, ref),
               ),
-              _Feature('Profile', Icons.person_outline, () => onOpenTab(4)),
+              _Feature('Profile', Icons.person_outline, () => onOpenTab(5)),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
