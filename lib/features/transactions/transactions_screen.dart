@@ -183,8 +183,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                 showTransactionDetail(context, ref, t),
                           ),
                         ),
-                      // Inline native ad after the first group blends into feed.
-                      if (i == 0) const NativeAdCard(),
+                      // Inline native ad every 3rd date group blends into feed.
+                      if (i % 3 == 0) const NativeAdCard(),
                     ],
                   ],
                 );

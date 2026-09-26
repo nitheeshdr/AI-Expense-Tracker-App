@@ -50,3 +50,4 @@ app.*.map.json
 *.keystore
 key.properties
 
+.gstack/

@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.2.0', 'Sep 2026', [
+    'Removed Meta Audience Network from ad mediation — ads now serve from Google AdMob only',
+    'More native ad placements across Transactions, Merchants, and Budgets that appear as you scroll, instead of just once',
+  ]),
   _Release('3.1.1', 'Sep 2026', [
     'Ads load faster and more reliably — rewarded/interstitial ads now try harder in the moment instead of failing instantly, and banner/native ads retry automatically after a failed load',
   ]),
@@ -146,7 +150,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.1.1 (build 15)',
+                Text('Version 3.2.0 (build 16)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -184,7 +188,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.1.1',
+                  applicationVersion: '3.2.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

@@ -277,6 +277,8 @@ class BudgetsScreen extends ConsumerWidget {
                 );
               },
             ),
+            const SizedBox(height: AppSpacing.lg),
+            const NativeAdCard(),
             const SizedBox(height: AppSpacing.xl),
 
             Row(
