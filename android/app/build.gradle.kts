@@ -92,4 +92,13 @@ dependencies {
     // enableEdgeToEdge() in MainActivity — pinned explicitly rather than
     // relying on whatever version another plugin happens to pull in.
     implementation("androidx.activity:activity-ktx:1.9.3")
+    // Meta Audience Network as an AdMob mediation bidding partner. Meta is
+    // bidding-only (waterfall mediation was retired in 2021), so this same
+    // adapter serves bidding once Meta is added as a bidding ad source in
+    // the AdMob mediation groups — no app code beyond this dependency is
+    // required, per Google's own mediation guide. (The earlier "No Fill"
+    // storm on-device wasn't Meta's fault — it was the AdMob mediation
+    // group's eCPM floor rejecting every source, Meta included. Fixed on
+    // the AdMob console side; Meta is safe to run alongside AdMob Network.)
+    implementation("com.google.ads.mediation:facebook:6.22.0.0")
 }
