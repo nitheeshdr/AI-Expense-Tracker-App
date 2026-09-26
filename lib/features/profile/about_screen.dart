@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.4.0', 'Sep 2026', [
+    'Ads now load only as you actually scroll to them — banner and native ad code rewritten so simultaneous requests across screens no longer collide',
+    'Fixed native ads silently failing to load on pages with several ad slots (Merchant detail, etc.)',
+  ]),
   _Release('3.3.2', 'Sep 2026', [
     'Backed native ad density back off to a safer spacing — packing them too tightly risks AdMob policy strikes and accidental taps, which put the whole account at risk',
   ]),
@@ -167,7 +171,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.3.2 (build 21)',
+                Text('Version 3.4.0 (build 22)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -205,7 +209,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.3.2',
+                  applicationVersion: '3.4.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

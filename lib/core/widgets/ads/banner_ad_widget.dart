@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../../services/ads/ad_config.dart';
 import '../../../services/ads/ad_request_gate.dart';
@@ -8,6 +9,14 @@ import '../../design/spacing.dart';
 
 /// Anchored adaptive banner sized to the available width (via LayoutBuilder).
 /// Uses the real platform ad size reported after load so it always renders.
+///
+/// Only requests an ad once this slot actually scrolls into view. The same
+/// banner ad unit ID appears on 8 widget instances across different screens
+/// (2 on Dashboard alone), and Flutter's IndexedStack keeps every visited
+/// tab's widgets alive underneath the active one — loading eagerly on build
+/// meant several of them could request the same ad unit ID at once
+/// regardless of what the user could actually see, which is what tripped
+/// AdMob's own "too many recently failed requests" guard.
 class BannerAdCard extends StatefulWidget {
   const BannerAdCard({super.key});
 
@@ -21,19 +30,21 @@ class _BannerAdCardState extends State<BannerAdCard> {
   bool _requested = false;
   int _width = 0;
 
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (_requested || info.visibleFraction <= 0 || _width <= 0) return;
+    _requested = true;
+    _load(_width);
+  }
+
   Future<void> _load(int width) async {
     if (!AdsManager.instance.isInitialized ||
         AdsManager.instance.isAdFreeActive ||
         width <= 0) {
       return;
     }
-    _width = width;
-    // The same banner ad unit ID is reused on several screens, and once a
-    // tab is visited its widgets stay alive underneath (IndexedStack) — so
-    // several BannerAdCards can be requesting/retrying at once. Gate every
-    // attempt through one shared cooldown per ad unit ID so the combined
-    // request rate never trips AdMob's own "too many recently failed
-    // requests" guard, instead of each widget only pacing itself.
+    // Every widget instance sharing this ad unit ID funnels through one
+    // cooldown, so the combined request rate across all of them (not just
+    // this one widget's own retries) stays under AdMob's guard.
     if (!AdRequestGate.tryAcquire(AdConfig.bannerUnit)) {
       Future.delayed(const Duration(seconds: 5), () {
         if (mounted) _load(width);
@@ -42,7 +53,7 @@ class _BannerAdCardState extends State<BannerAdCard> {
     }
     final size = await AdSize.getAnchoredAdaptiveBannerAdSize(
         Orientation.portrait, width);
-    if (size == null) return;
+    if (size == null || !mounted) return;
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnit,
       size: size,
@@ -56,13 +67,14 @@ class _BannerAdCardState extends State<BannerAdCard> {
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
           debugPrint('Banner failed: ${err.code} ${err.message}');
-          // A single failed load (e.g. a transient network hiccup or a
-          // no-fill moment) previously left this slot empty forever —
-          // retry as long as the widget is still on screen. Meta Audience
-          // Network (which rejected fast reloads outright) is no longer in
-          // the mediation stack, so AdMob Network alone can retry quickly.
+          // A single failed load (a transient network hiccup or a no-fill
+          // moment) previously left this slot empty forever — retry as long
+          // as the widget is still on screen. AdMob Network is the only
+          // mediation source now, so a plain fixed retry is safe (Meta
+          // Audience Network, since removed, rejected reloads faster than
+          // its own ~30s minimum interval outright).
           Future.delayed(const Duration(seconds: 8), () {
-            if (mounted) _load(_width);
+            if (mounted) _load(width);
           });
         },
       ),
@@ -82,14 +94,18 @@ class _BannerAdCardState extends State<BannerAdCard> {
     final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (!_requested) {
-          _requested = true;
-          _load(constraints.maxWidth.floor());
-        }
+        _width = constraints.maxWidth.floor();
         if (_size == null ||
             _ad == null ||
             AdsManager.instance.isAdFreeActive) {
-          return const SizedBox.shrink();
+          // A near-zero-size placeholder reserves no real space (same as
+          // before an ad loads) but gives VisibilityDetector something to
+          // measure, so it can tell when this slot scrolls into view.
+          return VisibilityDetector(
+            key: Key('banner_ad_slot_${identityHashCode(this)}'),
+            onVisibilityChanged: _onVisibilityChanged,
+            child: const SizedBox(height: 1),
+          );
         }
         return Card(
           margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
