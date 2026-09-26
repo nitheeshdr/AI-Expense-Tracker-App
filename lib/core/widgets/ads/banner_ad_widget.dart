@@ -18,6 +18,7 @@ class _BannerAdCardState extends State<BannerAdCard> {
   BannerAd? _ad;
   AdSize? _size;
   bool _requested = false;
+  int _width = 0;
 
   Future<void> _load(int width) async {
     if (!AdsManager.instance.isInitialized ||
@@ -25,6 +26,7 @@ class _BannerAdCardState extends State<BannerAdCard> {
         width <= 0) {
       return;
     }
+    _width = width;
     final size = await AdSize.getAnchoredAdaptiveBannerAdSize(
         Orientation.portrait, width);
     if (size == null) return;
@@ -41,6 +43,12 @@ class _BannerAdCardState extends State<BannerAdCard> {
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
           debugPrint('Banner failed: ${err.code} ${err.message}');
+          // A single failed load (e.g. a transient network hiccup or a
+          // no-fill moment) previously left this slot empty forever —
+          // retry as long as the widget is still on screen.
+          Future.delayed(const Duration(seconds: 12), () {
+            if (mounted) _load(_width);
+          });
         },
       ),
     );

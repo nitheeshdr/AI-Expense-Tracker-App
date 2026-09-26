@@ -67,7 +67,14 @@ class _NativeAdCardState extends State<NativeAdCard> {
         onAdLoaded: (_) {
           if (mounted) setState(() => _loaded = true);
         },
-        onAdFailedToLoad: (ad, err) => ad.dispose(),
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+          // A single failed load previously left this slot empty forever —
+          // retry as long as the widget is still on screen.
+          Future.delayed(const Duration(seconds: 12), () {
+            if (mounted) _load();
+          });
+        },
       ),
     );
     _ad = ad;

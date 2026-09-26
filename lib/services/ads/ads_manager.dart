@@ -48,18 +48,25 @@ class AdsManager {
   /// Retries a failed ad load after a short delay instead of leaving that ad
   /// slot permanently empty for the rest of the session — a single load
   /// failure (e.g. a transient network hiccup) shouldn't stop all future
-  /// requests for that ad type.
+  /// requests for that ad type. Shorter than before (was 30s) so a slot that
+  /// failed to fill has more chances to recover before the user actually
+  /// wants to watch one.
   void _retryLoad(VoidCallback load) {
-    Future.delayed(const Duration(seconds: 30), load);
+    Future.delayed(const Duration(seconds: 12), load);
   }
 
   // ---------------- Interstitial ----------------
+  bool _interstitialLoading = false;
+
   void _loadInterstitial() {
+    if (_interstitialLoading || _interstitial != null) return;
+    _interstitialLoading = true;
     InterstitialAd.load(
       adUnitId: AdConfig.interstitialUnit,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          _interstitialLoading = false;
           _interstitial = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
@@ -76,12 +83,31 @@ class AdsManager {
           );
         },
         onAdFailedToLoad: (err) {
+          _interstitialLoading = false;
           _interstitial = null;
           debugPrint('Interstitial failed: ${err.message}');
           _retryLoad(_loadInterstitial);
         },
       ),
     );
+  }
+
+  /// Mirrors [ensureRewardedReady] for the interstitial slot — waits a short
+  /// beat for a load in flight to land instead of skipping the ad just
+  /// because nothing happened to be preloaded yet. Safe to await here since
+  /// callers only reach this after their own action already completed (e.g.
+  /// the add-expense sheet has already popped), so a couple of seconds of
+  /// latency isn't user-visible.
+  Future<bool> _ensureInterstitialReady(
+      {Duration timeout = const Duration(seconds: 4)}) async {
+    if (_interstitial != null) return true;
+    _loadInterstitial();
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (_interstitial != null) return true;
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    return _interstitial != null;
   }
 
   /// Call after a meaningful completed action (e.g. saving a transaction).
@@ -95,10 +121,10 @@ class AdsManager {
     final dueByTime =
         DateTime.now().difference(_lastInterstitial) >
             AdConfig.interstitialMinGap;
-    if (dueByCount && dueByTime && _interstitial != null) {
-      _lastInterstitial = DateTime.now();
-      await _interstitial!.show();
-    }
+    if (!dueByCount || !dueByTime) return;
+    if (!await _ensureInterstitialReady()) return;
+    _lastInterstitial = DateTime.now();
+    await _interstitial!.show();
   }
 
   /// Offers the user a rewarded ad in exchange for an hour with no ads,
@@ -148,12 +174,17 @@ class AdsManager {
   }
 
   // ---------------- Rewarded ----------------
+  bool _rewardedLoading = false;
+
   void _loadRewarded() {
+    if (_rewardedLoading || _rewarded != null) return;
+    _rewardedLoading = true;
     RewardedAd.load(
       adUnitId: AdConfig.rewardedUnit,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          _rewardedLoading = false;
           _rewarded = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
@@ -169,6 +200,7 @@ class AdsManager {
           );
         },
         onAdFailedToLoad: (err) {
+          _rewardedLoading = false;
           _rewarded = null;
           debugPrint('Rewarded failed: ${err.message}');
           _retryLoad(_loadRewarded);
@@ -178,6 +210,25 @@ class AdsManager {
   }
 
   bool get isRewardedReady => _rewarded != null;
+
+  /// Returns true immediately if a rewarded ad is already loaded. Otherwise
+  /// actively kicks off (or piggybacks on) a load and waits up to [timeout]
+  /// for it to land, instead of failing instantly just because nothing
+  /// happened to be preloaded at the exact moment the user tapped a
+  /// rewarded-ad button — most loads that succeed at all land within a few
+  /// seconds, so this turns "not ready right now" into "not ready even
+  /// after trying," which is a much smaller share of taps.
+  Future<bool> ensureRewardedReady(
+      {Duration timeout = const Duration(seconds: 8)}) async {
+    if (isRewardedReady) return true;
+    _loadRewarded();
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (isRewardedReady) return true;
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    return isRewardedReady;
+  }
 
   /// Shows a rewarded ad. Resolves true if the user earned the reward.
   Future<bool> showRewarded() async {

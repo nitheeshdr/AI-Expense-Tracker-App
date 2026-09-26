@@ -14,6 +14,7 @@ import '../../core/settings/settings.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
+import '../../core/widgets/ads/rewarded_ad_flow.dart';
 import '../../core/widgets/animated_count.dart';
 import '../../core/widgets/charts/bar_chart.dart';
 import '../../core/widgets/charts/donut_chart.dart';
@@ -1145,17 +1146,13 @@ class _AiInsightCard extends ConsumerWidget {
 
   Future<void> _watchAdForDeeperReport(
       BuildContext context, WidgetRef ref) async {
-    final ads = ref.read(adsManagerProvider);
     final messenger = ScaffoldMessenger.of(context);
-    if (!ads.isRewardedReady) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ad not ready yet — try again shortly.')));
-      return;
-    }
-    final earned = await ads.showRewarded();
+    final earned = await tryShowRewardedAd(context, ref);
     if (!earned) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Watch the full ad to unlock the deeper report.')));
+      if (context.mounted) {
+        messenger.showSnackBar(const SnackBar(
+            content: Text('Watch the full ad to unlock the deeper report.')));
+      }
       return;
     }
     onOpenTab(2);

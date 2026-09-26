@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/providers.dart';
 import '../../core/design/spacing.dart';
+import '../../core/widgets/ads/rewarded_ad_flow.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_sheet.dart';
 import 'sms_import_controller.dart';
@@ -90,17 +90,13 @@ class _SmsImportSheet extends ConsumerWidget {
   }
 
   Future<void> _deepScan(BuildContext context, WidgetRef ref) async {
-    final ads = ref.read(adsManagerProvider);
-    final messenger = ScaffoldMessenger.of(context);
-    if (!ads.isRewardedReady) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ad not ready yet — try again shortly.')));
-      return;
-    }
-    final earned = await ads.showRewarded();
+    final earned = await tryShowRewardedAd(context, ref,
+        notReadyMessage: 'Ad not available right now — try again shortly.');
     if (!earned) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Watch the full ad to unlock the deep scan.')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Watch the full ad to unlock the deep scan.')));
+      }
       return;
     }
     await ref.read(smsImportProvider.notifier).importInbox(sinceDays: 365);

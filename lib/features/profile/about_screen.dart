@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.1.1', 'Sep 2026', [
+    'Ads load faster and more reliably — rewarded/interstitial ads now try harder in the moment instead of failing instantly, and banner/native ads retry automatically after a failed load',
+  ]),
   _Release('3.1.0', 'Sep 2026', [
     'New: watch a short ad for a deeper AI spending report from the dashboard',
     'New: watch a short ad to deep-scan up to a year of SMS for older transactions',
@@ -143,7 +146,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.1.0 (build 14)',
+                Text('Version 3.1.1 (build 15)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -181,7 +184,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.1.0',
+                  applicationVersion: '3.1.1',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

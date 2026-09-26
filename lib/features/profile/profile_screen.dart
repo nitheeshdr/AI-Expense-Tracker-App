@@ -8,6 +8,7 @@ import '../../core/settings/settings.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
+import '../../core/widgets/ads/rewarded_ad_flow.dart';
 import '../../core/widgets/app_sheet.dart';
 import '../../features/sms_import/sms_import_sheet.dart';
 import '../../services/export/export_service.dart';
@@ -244,7 +245,7 @@ class ProfileScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 3.1.0 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 3.1.1 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),
@@ -256,17 +257,13 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
-    final ads = ref.read(adsManagerProvider);
     final messenger = ScaffoldMessenger.of(context);
-    if (!ads.isRewardedReady) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ad not ready yet — try again shortly.')));
-      return;
-    }
-    final earned = await ads.showRewarded();
+    final earned = await tryShowRewardedAd(context, ref);
     if (!earned) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Watch the full ad to unlock the export.')));
+      if (context.mounted) {
+        messenger.showSnackBar(const SnackBar(
+            content: Text('Watch the full ad to unlock the export.')));
+      }
       return;
     }
     try {
@@ -304,19 +301,15 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _unlockWithRewarded(BuildContext context, WidgetRef ref) async {
-    final ads = ref.read(adsManagerProvider);
     final messenger = ScaffoldMessenger.of(context);
-    if (!ads.isRewardedReady) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Ad not ready yet — try again shortly.')));
-      return;
+    final earned = await tryShowRewardedAd(context, ref);
+    if (context.mounted) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(earned
+            ? 'Premium report unlocked — check the Aria tab.'
+            : 'Reward not earned. Watch the full ad to unlock.'),
+      ));
     }
-    final earned = await ads.showRewarded();
-    messenger.showSnackBar(SnackBar(
-      content: Text(earned
-          ? 'Premium report unlocked — check the Aria tab.'
-          : 'Reward not earned. Watch the full ad to unlock.'),
-    ));
   }
 
   Future<void> _pickCurrency(BuildContext context, WidgetRef ref) {
