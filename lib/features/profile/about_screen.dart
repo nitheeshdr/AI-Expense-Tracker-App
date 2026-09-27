@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.4.1', 'Sep 2026', [
+    'Release management update',
+  ]),
   _Release('3.0.0', 'Sep 2026', [
     'New: Scan receipt — snap or pick a photo and the amount fills in automatically',
     'Receipt scanning runs fully on-device; photos are never uploaded anywhere',
@@ -138,7 +141,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.0.0 (build 13)',
+                Text('Version 3.4.1 (build 23)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -176,7 +179,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.0.0',
+                  applicationVersion: '3.4.1',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
