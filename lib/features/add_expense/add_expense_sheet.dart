@@ -14,6 +14,7 @@ import '../../core/widgets/app_sheet.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/category_icon.dart';
+import '../../services/ads/rewards_service.dart';
 import '../../services/categorization/rule_categorizer.dart';
 import '../../services/review/review_service.dart';
 
@@ -66,6 +67,10 @@ Future<void> openScanReceipt(BuildContext context, WidgetRef ref) async {
   final image =
       await ImagePicker().pickImage(source: source, imageQuality: 85);
   if (image == null || !context.mounted) return;
+  if (!await RewardsService.instance.ensureAccess(context, RewardFeature.scan)) {
+    return;
+  }
+  if (!context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
   showDialog<void>(

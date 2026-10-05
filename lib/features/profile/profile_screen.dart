@@ -10,6 +10,9 @@ import '../../core/widgets/ads/banner_ad_widget.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/app_sheet.dart';
 import '../../features/sms_import/sms_import_sheet.dart';
+import '../../core/widgets/ads/rewards_card.dart';
+import '../../services/ads/ads_manager.dart';
+import '../../services/ads/rewards_service.dart';
 import '../../services/export/export_service.dart';
 import '../../services/security/app_lock_service.dart';
 import 'about_screen.dart';
@@ -239,12 +242,30 @@ class ProfileScreen extends ConsumerWidget {
           const NativeAdCard(),
           const SizedBox(height: AppSpacing.md),
 
+          _GroupLabel('Rewards'),
+          const RewardsCard(),
+          const SizedBox(height: AppSpacing.md),
+
           _GroupLabel('About'),
+          FutureBuilder<bool>(
+            future: AdsManager.instance.isPrivacyOptionsRequired(),
+            builder: (context, snap) => snap.data != true
+                ? const SizedBox.shrink()
+                : Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: const Text('Privacy settings'),
+                      subtitle: const Text('Change your ad consent choices'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: AdsManager.instance.showPrivacyOptions,
+                    ),
+                  ),
+          ),
           Card(
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 3.4.3 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 3.4.4 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),
@@ -257,6 +278,9 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    if (!await RewardsService.instance.ensureAccess(context, RewardFeature.export)) {
+      return;
+    }
     try {
       final count = await ExportService.instance
           .shareCsv(ref.read(transactionRepoProvider));
@@ -291,21 +315,8 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _unlockWithRewarded(BuildContext context, WidgetRef ref) async {
-    final ads = ref.read(adsManagerProvider);
-    final messenger = ScaffoldMessenger.of(context);
-    if (!ads.isRewardedReady) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Ad not ready yet — try again shortly.')));
-      return;
-    }
-    final earned = await ads.showRewarded();
-    messenger.showSnackBar(SnackBar(
-      content: Text(earned
-          ? 'Premium report unlocked — check the Aria tab.'
-          : 'Reward not earned. Watch the full ad to unlock.'),
-    ));
-  }
+  Future<void> _unlockWithRewarded(BuildContext context, WidgetRef ref) =>
+      generatePremiumReport(context, ref);
 
   Future<void> _pickCurrency(BuildContext context, WidgetRef ref) {
     const codes = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'JPY'];

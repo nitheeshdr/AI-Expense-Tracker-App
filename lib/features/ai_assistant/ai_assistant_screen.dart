@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../services/ads/rewards_service.dart';
 import '../../core/data/models.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/spacing.dart';
@@ -37,8 +38,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     super.dispose();
   }
 
-  void _send(String text) {
+  Future<void> _send(String text) async {
     if (text.trim().isEmpty) return;
+    if (!await RewardsService.instance.ensureAccess(context, RewardFeature.aiChat)) {
+      return;
+    }
     _input.clear();
     ref.read(aiControllerProvider.notifier).send(text.trim());
     Future.delayed(const Duration(milliseconds: 120), _scrollToEnd);

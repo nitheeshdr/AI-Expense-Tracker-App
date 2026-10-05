@@ -9,6 +9,7 @@ import '../../core/design/app_theme.dart';
 import '../../core/design/spacing.dart';
 import '../../core/settings/settings.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/widgets/ads/rewards_card.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
 import '../../core/widgets/animated_count.dart';
@@ -138,6 +139,8 @@ class _DashboardList extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           const BannerAdCard(),
+          const SizedBox(height: AppSpacing.sm),
+          const RewardsCard(),
           const SizedBox(height: AppSpacing.sm),
 
           // Today / Month / Total spend

@@ -21,6 +21,12 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.4.4', 'Oct 2026', [
+    'New: Rewards — watch a short ad for 1, 6 or 24 hours ad-free',
+    'New: earn extra AI messages, receipt scans and CSV exports when your free daily limit runs out',
+    'Premium AI report now generates a real monthly report after the ad',
+    'Added Google consent (UMP) and a Privacy settings option for users in regions that require it',
+  ]),
   _Release('3.4.3', 'Oct 2026', [
     'Added Meta Audience Network back as an AdMob mediation bidding partner',
   ]),
@@ -147,7 +153,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.4.3 (build 25)',
+                Text('Version 3.4.4 (build 26)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -185,7 +191,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.4.3',
+                  applicationVersion: '3.4.4',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
