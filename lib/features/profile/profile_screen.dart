@@ -13,6 +13,7 @@ import '../../features/sms_import/sms_import_sheet.dart';
 import '../../core/widgets/ads/rewards_card.dart';
 import '../../services/ads/ads_manager.dart';
 import '../../services/ads/rewards_service.dart';
+import '../../services/auth/auth_service.dart';
 import '../../services/export/export_service.dart';
 import '../../services/security/app_lock_service.dart';
 import 'about_screen.dart';
@@ -27,6 +28,14 @@ class ProfileScreen extends ConsumerWidget {
   final VoidCallback? onBack;
   const ProfileScreen({super.key, this.onBack});
 
+  Future<void> _signIn(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final error = await AuthService.instance.signInWithGoogle();
+    if (error != null) {
+      messenger.showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -35,6 +44,7 @@ class ProfileScreen extends ConsumerWidget {
     final ctrl = ref.read(settingsProvider.notifier);
     final keyAsync = ref.watch(groqKeyProvider);
     final hasKey = (keyAsync.value ?? '').isNotEmpty;
+    final user = ref.watch(authUserProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,19 +70,49 @@ class ProfileScreen extends ConsumerWidget {
                     radius: 30,
                     backgroundColor: cs.primaryContainer,
                     foregroundColor: cs.onPrimaryContainer,
-                    child: const Icon(Icons.person, size: 30),
+                    backgroundImage: user?.photoURL != null
+                        ? NetworkImage(user!.photoURL!)
+                        : null,
+                    child: user?.photoURL != null
+                        ? null
+                        : const Icon(Icons.person, size: 30),
                   ),
                   const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(s.userName == 'there' ? 'You' : s.userName,
+                        Text(
+                            user != null
+                                ? (user.displayName ?? user.email ?? 'Signed in')
+                                : 'Guest',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleLarge),
                         const SizedBox(height: 2),
-                        Text('Base currency · ${s.currency}',
+                        Text(
+                            user?.email ?? 'Base currency · ${s.currency}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium
                                 ?.copyWith(color: cs.onSurfaceVariant)),
+                        if (user == null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.login, size: 18),
+                              label: const Text('Sign in with Google'),
+                              onPressed: () => _signIn(context),
+                            ),
+                          )
+                        else
+                          TextButton(
+                            style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 32)),
+                            onPressed: () => AuthService.instance.signOut(),
+                            child: const Text('Sign out'),
+                          ),
                       ],
                     ),
                   ),
@@ -265,7 +305,7 @@ class ProfileScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About & changelog'),
-              subtitle: const Text('Version 3.4.6 · Nitheesh Rajendran'),
+              subtitle: const Text('Version 3.4.7 · Nitheesh Rajendran'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutScreen())),

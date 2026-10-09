@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.4.7', 'Oct 2026', [
+    'New: optional Sign in with Google on the Profile screen — the app still works fully without an account',
+  ]),
   _Release('3.4.6', 'Oct 2026', [
     'Faster, more reliable ads: failed loads now retry automatically and expired ads refresh when you return to the app',
   ]),
@@ -159,7 +162,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.4.6 (build 28)',
+                Text('Version 3.4.7 (build 29)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -197,7 +200,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.4.6',
+                  applicationVersion: '3.4.7',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
