@@ -89,21 +89,56 @@ class AdsManager {
     _loadRewarded();
   }
 
-  /// Retries a failed ad load after a short delay instead of leaving that ad
-  /// slot permanently empty for the rest of the session — a single load
-  /// failure (e.g. a transient network hiccup) shouldn't stop all future
-  /// requests for that ad type.
-  void _retryLoad(VoidCallback load) {
-    Future.delayed(const Duration(seconds: 30), load);
+  /// Delay before retry [attempt] (0-based) of a failed ad load: 5s, 10s,
+  /// 20s ... capped at 2 minutes. High eCPM floors mean "no fill" is common,
+  /// so retrying quickly at first (the next auction often fills) and then
+  /// backing off avoids both empty slots and hammering the ad server.
+  static Duration retryDelay(int attempt) {
+    final secs = 5 * (1 << attempt.clamp(0, 5));
+    return Duration(seconds: secs > 120 ? 120 : secs);
+  }
+
+  /// Preloaded full-screen ads expire after ~1 hour; reload before then so a
+  /// stale ad is never what the user is handed.
+  static const _adTtl = Duration(minutes: 50);
+
+  int _interstitialAttempts = 0;
+  int _rewardedAttempts = 0;
+  DateTime _interstitialLoadedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _rewardedLoadedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _interstitialLoading = false;
+  bool _rewardedLoading = false;
+
+  /// Call when the app returns to the foreground: reloads any empty or
+  /// expired full-screen ad slot.
+  void refreshIfNeeded() {
+    if (!_initialized) return;
+    final now = DateTime.now();
+    if (_interstitial == null ||
+        now.difference(_interstitialLoadedAt) > _adTtl) {
+      _interstitial?.dispose();
+      _interstitial = null;
+      _loadInterstitial();
+    }
+    if (_rewarded == null || now.difference(_rewardedLoadedAt) > _adTtl) {
+      _rewarded?.dispose();
+      _rewarded = null;
+      _loadRewarded();
+    }
   }
 
   // ---------------- Interstitial ----------------
   void _loadInterstitial() {
+    if (_interstitialLoading || _interstitial != null) return;
+    _interstitialLoading = true;
     InterstitialAd.load(
       adUnitId: AdConfig.interstitialUnit,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          _interstitialLoading = false;
+          _interstitialAttempts = 0;
+          _interstitialLoadedAt = DateTime.now();
           _interstitial = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
@@ -120,9 +155,10 @@ class AdsManager {
           );
         },
         onAdFailedToLoad: (err) {
+          _interstitialLoading = false;
           _interstitial = null;
-          debugPrint('Interstitial failed: ${err.message}');
-          _retryLoad(_loadInterstitial);
+          debugPrint('Interstitial failed: ${err.code} ${err.message}');
+          Future.delayed(retryDelay(_interstitialAttempts++), _loadInterstitial);
         },
       ),
     );
@@ -223,11 +259,16 @@ class AdsManager {
 
   // ---------------- Rewarded ----------------
   void _loadRewarded() {
+    if (_rewardedLoading || _rewarded != null) return;
+    _rewardedLoading = true;
     RewardedAd.load(
       adUnitId: AdConfig.rewardedUnit,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
+          _rewardedLoading = false;
+          _rewardedAttempts = 0;
+          _rewardedLoadedAt = DateTime.now();
           _rewarded = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
@@ -243,9 +284,10 @@ class AdsManager {
           );
         },
         onAdFailedToLoad: (err) {
+          _rewardedLoading = false;
           _rewarded = null;
-          debugPrint('Rewarded failed: ${err.message}');
-          _retryLoad(_loadRewarded);
+          debugPrint('Rewarded failed: ${err.code} ${err.message}');
+          Future.delayed(retryDelay(_rewardedAttempts++), _loadRewarded);
         },
       ),
     );

@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.4.6', 'Oct 2026', [
+    'Faster, more reliable ads: failed loads now retry automatically and expired ads refresh when you return to the app',
+  ]),
   _Release('3.4.5', 'Oct 2026', [
     'Removed Meta Audience Network — ads now serve from Google AdMob only',
   ]),
@@ -156,7 +159,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.4.5 (build 27)',
+                Text('Version 3.4.6 (build 28)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -194,7 +197,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.4.5',
+                  applicationVersion: '3.4.6',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

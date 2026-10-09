@@ -12,6 +12,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/haptics.dart';
 import '../../core/settings/settings.dart';
 import '../../core/widgets/app_sheet.dart';
+import '../../services/ads/ads_manager.dart';
 import '../../services/notifications/notification_service.dart';
 import '../../services/review/review_prompt_sheet.dart';
 import '../../services/updates/app_update_service.dart';
@@ -153,6 +154,7 @@ class _HomeShellState extends ConsumerState<HomeShell>
     // SMS received in the meantime so the data is always current.
     if (state == AppLifecycleState.resumed) {
       ref.read(smsImportProvider.notifier).silentSync();
+      AdsManager.instance.refreshIfNeeded();
       // Returning from the background (phone home / app switcher / another
       // app) always lands back on the Home tab, regardless of which
       // screen was open when the app was backgrounded. Not `_openTab`:

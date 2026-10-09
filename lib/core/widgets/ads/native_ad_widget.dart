@@ -21,6 +21,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
   NativeAd? _ad;
   bool _loaded = false;
   bool _built = false;
+  int _attempts = 0;
 
   @override
   void didChangeDependencies() {
@@ -67,7 +68,16 @@ class _NativeAdCardState extends State<NativeAdCard> {
         onAdLoaded: (_) {
           if (mounted) setState(() => _loaded = true);
         },
-        onAdFailedToLoad: (ad, err) => ad.dispose(),
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+          if (identical(_ad, ad)) _ad = null;
+          debugPrint('Native failed: ${err.code} ${err.message}');
+          if (_attempts < 4) {
+            Future.delayed(AdsManager.retryDelay(_attempts++), () {
+              if (mounted && !_loaded) _load();
+            });
+          }
+        },
       ),
     );
     _ad = ad;

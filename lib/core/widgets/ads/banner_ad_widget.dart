@@ -18,29 +18,42 @@ class _BannerAdCardState extends State<BannerAdCard> {
   BannerAd? _ad;
   AdSize? _size;
   bool _requested = false;
+  int _width = 0;
+  int _attempts = 0;
+  static const _maxAttempts = 4;
 
   Future<void> _load(int width) async {
-    if (!AdsManager.instance.isInitialized ||
+    _width = width;
+    if (!mounted ||
+        !AdsManager.instance.isInitialized ||
         AdsManager.instance.isAdFreeActive ||
         width <= 0) {
       return;
     }
-    final size = await AdSize.getAnchoredAdaptiveBannerAdSize(
-        Orientation.portrait, width);
-    if (size == null) return;
+    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
+    if (size == null || !mounted) return;
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnit,
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) async {
+          _attempts = 0;
           final platformSize = await (ad as BannerAd).getPlatformAdSize();
           if (!mounted) return;
           setState(() => _size = platformSize ?? size);
         },
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
+          if (identical(_ad, ad)) _ad = null;
           debugPrint('Banner failed: ${err.code} ${err.message}');
+          // No-fill is common with high floors: retry with backoff rather
+          // than leaving the slot empty until the screen is rebuilt.
+          if (_attempts < _maxAttempts) {
+            Future.delayed(AdsManager.retryDelay(_attempts++), () {
+              if (mounted && _size == null) _load(_width);
+            });
+          }
         },
       ),
     );
