@@ -250,6 +250,8 @@ class _HomeShellState extends ConsumerState<HomeShell>
       _visitedTabs.add(i);
       if (!_isSideTab(i)) _lastMainTab = i;
     });
+    // Natural break between pages: may offer a rewarded interstitial.
+    if (i != 0) AdsManager.instance.onPageOpened();
   }
 
   void _openActions() {

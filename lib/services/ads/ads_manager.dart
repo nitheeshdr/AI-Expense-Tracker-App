@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -78,16 +79,46 @@ class AdsManager {
     if (_initialized) return;
     await _gatherConsent();
     if (!await ConsentInformation.instance.canRequestAds()) return;
-    await MobileAds.instance.initialize();
-    _initialized = true;
     final prefs = await SharedPreferences.getInstance();
     final untilMs = prefs.getInt(_kAdFreeUntil);
     if (untilMs != null) {
       _adFreeUntil = DateTime.fromMillisecondsSinceEpoch(untilMs);
     }
+    try {
+      await MobileAds.instance.initialize();
+    } catch (e) {
+      debugPrint('MobileAds init failed: $e');
+      return;
+    }
+    _initialized = true;
+    // Wake banner/native slots that were built while the SDK was still
+    // starting up — they used to give up silently and stay empty.
+    ready.value = true;
     _loadInterstitial();
     _loadRewarded();
+    _loadRewardedInterstitial();
   }
+
+  /// Flips to true once the SDK is initialized and ads may be requested.
+  /// Banner/native widgets wait on this instead of checking once at build.
+  final ValueNotifier<bool> ready = ValueNotifier(false);
+
+  /// Bumped each time the app returns to the foreground so empty banner and
+  /// native slots try again (e.g. after connectivity comes back).
+  final ValueNotifier<int> resumeTick = ValueNotifier(0);
+
+  /// Whether a failed load is worth retrying. Only INVALID_REQUEST (1) is a
+  /// config problem that retrying can't fix; no-fill (3), network (2) and
+  /// internal (0) errors are transient.
+  static bool isRetryable(LoadAdError err) => err.code != 1;
+
+  /// [retryDelay] plus up to 25% jitter so slots don't all retry in lockstep.
+  static Duration retryDelayJittered(int attempt) {
+    final base = retryDelay(attempt);
+    return base + Duration(milliseconds: _rng.nextInt(base.inMilliseconds ~/ 4));
+  }
+
+  static final _rng = Random();
 
   /// Delay before retry [attempt] (0-based) of a failed ad load: 5s, 10s,
   /// 20s ... capped at 2 minutes. High eCPM floors mean "no fill" is common,
@@ -113,6 +144,7 @@ class AdsManager {
   /// expired full-screen ad slot.
   void refreshIfNeeded() {
     if (!_initialized) return;
+    resumeTick.value++;
     final now = DateTime.now();
     if (_interstitial == null ||
         now.difference(_interstitialLoadedAt) > _adTtl) {
@@ -158,7 +190,10 @@ class AdsManager {
           _interstitialLoading = false;
           _interstitial = null;
           debugPrint('Interstitial failed: ${err.code} ${err.message}');
-          Future.delayed(retryDelay(_interstitialAttempts++), _loadInterstitial);
+          if (isRetryable(err)) {
+            Future.delayed(
+                retryDelayJittered(_interstitialAttempts++), _loadInterstitial);
+          }
         },
       ),
     );
@@ -287,10 +322,130 @@ class AdsManager {
           _rewardedLoading = false;
           _rewarded = null;
           debugPrint('Rewarded failed: ${err.code} ${err.message}');
-          Future.delayed(retryDelay(_rewardedAttempts++), _loadRewarded);
+          if (isRetryable(err)) {
+            Future.delayed(
+                retryDelayJittered(_rewardedAttempts++), _loadRewarded);
+          }
         },
       ),
     );
+  }
+
+  // ---------------- Rewarded interstitial ----------------
+  RewardedInterstitialAd? _rewardedInterstitial;
+  bool _riLoading = false;
+  bool _riOffering = false;
+  int _riAttempts = 0;
+  int _pageOpens = 0;
+  DateTime _riLoadedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _lastRiOffer = DateTime.now(); // no offer right after launch
+
+  void _loadRewardedInterstitial() {
+    if (_riLoading || _rewardedInterstitial != null) return;
+    _riLoading = true;
+    RewardedInterstitialAd.load(
+      adUnitId: AdConfig.rewardedInterstitialUnit,
+      request: const AdRequest(),
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _riLoading = false;
+          _riAttempts = 0;
+          _riLoadedAt = DateTime.now();
+          _rewardedInterstitial = ad;
+        },
+        onAdFailedToLoad: (err) {
+          _riLoading = false;
+          _rewardedInterstitial = null;
+          debugPrint(
+              'Rewarded interstitial failed: ${err.code} ${err.message}');
+          if (isRetryable(err)) {
+            Future.delayed(
+                retryDelayJittered(_riAttempts++), _loadRewardedInterstitial);
+          }
+        },
+      ),
+    );
+  }
+
+  /// Call when the user opens a page. Every Nth open (frequency-capped, and
+  /// never during an ad-free window or right after another full-screen ad)
+  /// offers a rewarded interstitial. Per AdMob policy the user first sees an
+  /// intro dialog stating the reward and can decline; the ad only plays after
+  /// they tap Watch.
+  void onPageOpened() {
+    if (!_initialized || isAdFreeActive || _riOffering) return;
+    _pageOpens++;
+    if (_pageOpens % AdConfig.rewardedInterstitialEveryNPages != 0) return;
+    final now = DateTime.now();
+    if (now.difference(_lastRiOffer) < AdConfig.rewardedInterstitialMinGap ||
+        now.difference(_lastInterstitial) < AdConfig.interstitialMinGap) {
+      return;
+    }
+    if (_rewardedInterstitial != null &&
+        now.difference(_riLoadedAt) > _adTtl) {
+      _rewardedInterstitial?.dispose();
+      _rewardedInterstitial = null;
+    }
+    if (_rewardedInterstitial == null) {
+      _loadRewardedInterstitial();
+      return;
+    }
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    _riOffering = true;
+    _lastRiOffer = now;
+    final mins = AdConfig.rewardedInterstitialReward.inMinutes;
+    showLiquidGlassDialog<void>(
+      context: context,
+      builder: (dialogContext) => LiquidGlassAlertDialog(
+        icon: Icon(Icons.card_giftcard_rounded,
+            size: 40, color: Theme.of(dialogContext).colorScheme.primary),
+        title: Text('Ad-free for $mins minutes'),
+        content: Text('Watch a short video and every ad stays off for the '
+            'next $mins minutes.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _riOffering = false;
+            },
+            child: const Text('No thanks'),
+          ),
+          LiquidGlassButton(
+            label: 'Watch video',
+            height: 40,
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await _showRewardedInterstitial();
+              _riOffering = false;
+            },
+          ),
+        ],
+      ),
+    ).whenComplete(() => _riOffering = false);
+  }
+
+  Future<void> _showRewardedInterstitial() async {
+    final ad = _rewardedInterstitial;
+    if (ad == null) return;
+    _rewardedInterstitial = null;
+    var earned = false;
+    final done = Completer<void>();
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadRewardedInterstitial();
+        if (!done.isCompleted) done.complete();
+      },
+      onAdFailedToShowFullScreenContent: (ad, err) {
+        ad.dispose();
+        _loadRewardedInterstitial();
+        if (!done.isCompleted) done.complete();
+      },
+    );
+    await ad.show(onUserEarnedReward: (_, _) => earned = true);
+    await done.future;
+    if (earned) await grantAdFree(AdConfig.rewardedInterstitialReward);
   }
 
   bool get isRewardedReady => _rewarded != null;
@@ -310,5 +465,6 @@ class AdsManager {
   void dispose() {
     _interstitial?.dispose();
     _rewarded?.dispose();
+    _rewardedInterstitial?.dispose();
   }
 }

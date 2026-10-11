@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -7,6 +9,11 @@ import '../../design/spacing.dart';
 
 /// Anchored adaptive banner sized to the available width (via LayoutBuilder).
 /// Uses the real platform ad size reported after load so it always renders.
+///
+/// Loading is resilient to a slow SDK start and to no-fill: it waits for
+/// [AdsManager.ready] instead of giving up when built early, retries with
+/// jittered backoff, and tries again whenever the app returns to the
+/// foreground.
 class BannerAdCard extends StatefulWidget {
   const BannerAdCard({super.key});
 
@@ -17,21 +24,52 @@ class BannerAdCard extends StatefulWidget {
 class _BannerAdCardState extends State<BannerAdCard> {
   BannerAd? _ad;
   AdSize? _size;
-  bool _requested = false;
   int _width = 0;
   int _attempts = 0;
-  static const _maxAttempts = 4;
+  bool _loading = false;
+  Timer? _retryTimer;
+  static const _maxAttempts = 8;
 
-  Future<void> _load(int width) async {
-    _width = width;
+  @override
+  void initState() {
+    super.initState();
+    AdsManager.instance.ready.addListener(_kick);
+    AdsManager.instance.resumeTick.addListener(_onResume);
+  }
+
+  @override
+  void dispose() {
+    AdsManager.instance.ready.removeListener(_kick);
+    AdsManager.instance.resumeTick.removeListener(_onResume);
+    _retryTimer?.cancel();
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  void _onResume() {
+    if (_size != null || _loading) return;
+    _attempts = 0; // fresh start after a background trip
+    _retryTimer?.cancel();
+    _kick();
+  }
+
+  void _kick() {
+    if (mounted && _size == null && !_loading) _load();
+  }
+
+  Future<void> _load() async {
     if (!mounted ||
         !AdsManager.instance.isInitialized ||
         AdsManager.instance.isAdFreeActive ||
-        width <= 0) {
+        _width <= 0) {
       return;
     }
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
-    if (size == null || !mounted) return;
+    _loading = true;
+    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(_width);
+    if (size == null || !mounted) {
+      _loading = false;
+      return;
+    }
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnit,
       size: size,
@@ -40,19 +78,19 @@ class _BannerAdCardState extends State<BannerAdCard> {
         onAdLoaded: (ad) async {
           _attempts = 0;
           final platformSize = await (ad as BannerAd).getPlatformAdSize();
+          _loading = false;
           if (!mounted) return;
           setState(() => _size = platformSize ?? size);
         },
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
           if (identical(_ad, ad)) _ad = null;
+          _loading = false;
           debugPrint('Banner failed: ${err.code} ${err.message}');
-          // No-fill is common with high floors: retry with backoff rather
-          // than leaving the slot empty until the screen is rebuilt.
-          if (_attempts < _maxAttempts) {
-            Future.delayed(AdsManager.retryDelay(_attempts++), () {
-              if (mounted && _size == null) _load(_width);
-            });
+          if (AdsManager.isRetryable(err) && _attempts < _maxAttempts) {
+            _retryTimer?.cancel();
+            _retryTimer = Timer(
+                AdsManager.retryDelayJittered(_attempts++), _kick);
           }
         },
       ),
@@ -62,19 +100,15 @@ class _BannerAdCardState extends State<BannerAdCard> {
   }
 
   @override
-  void dispose() {
-    _ad?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (!_requested) {
-          _requested = true;
-          _load(constraints.maxWidth.floor());
+        final w = constraints.maxWidth.floor();
+        if (w > 0 && w != _width) {
+          final first = _width == 0;
+          _width = w;
+          if (first) WidgetsBinding.instance.addPostFrameCallback((_) => _kick());
         }
         if (_size == null ||
             _ad == null ||

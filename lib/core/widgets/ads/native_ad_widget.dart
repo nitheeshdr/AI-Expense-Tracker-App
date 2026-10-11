@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -21,14 +23,34 @@ class _NativeAdCardState extends State<NativeAdCard> {
   NativeAd? _ad;
   bool _loaded = false;
   bool _built = false;
+  bool _loading = false;
   int _attempts = 0;
+  Timer? _retryTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    AdsManager.instance.ready.addListener(_kick);
+    AdsManager.instance.resumeTick.addListener(_onResume);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_built) return;
     _built = true;
-    _load();
+    _kick();
+  }
+
+  void _onResume() {
+    if (_loaded || _loading) return;
+    _attempts = 0;
+    _retryTimer?.cancel();
+    _kick();
+  }
+
+  void _kick() {
+    if (mounted && _built && !_loaded && !_loading) _load();
   }
 
   void _load() {
@@ -36,6 +58,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
         AdsManager.instance.isAdFreeActive) {
       return;
     }
+    _loading = true;
     final c = AppTheme.of(context);
     final ad = NativeAd(
       adUnitId: AdConfig.nativeUnit,
@@ -66,16 +89,19 @@ class _NativeAdCardState extends State<NativeAdCard> {
       ),
       listener: NativeAdListener(
         onAdLoaded: (_) {
+          _loading = false;
+          _attempts = 0;
           if (mounted) setState(() => _loaded = true);
         },
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
           if (identical(_ad, ad)) _ad = null;
+          _loading = false;
           debugPrint('Native failed: ${err.code} ${err.message}');
-          if (_attempts < 4) {
-            Future.delayed(AdsManager.retryDelay(_attempts++), () {
-              if (mounted && !_loaded) _load();
-            });
+          if (AdsManager.isRetryable(err) && _attempts < 8) {
+            _retryTimer?.cancel();
+            _retryTimer =
+                Timer(AdsManager.retryDelayJittered(_attempts++), _kick);
           }
         },
       ),
@@ -86,6 +112,9 @@ class _NativeAdCardState extends State<NativeAdCard> {
 
   @override
   void dispose() {
+    AdsManager.instance.ready.removeListener(_kick);
+    AdsManager.instance.resumeTick.removeListener(_onResume);
+    _retryTimer?.cancel();
     _ad?.dispose();
     super.dispose();
   }

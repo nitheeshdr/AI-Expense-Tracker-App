@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.5.1', 'Oct 2026', [
+    'New: watch a short video from any page for 30 minutes ad-free — always optional',
+    'Fixed: ads that stayed blank on startup now load reliably, and retry after no-fill or when you return to the app',
+  ]),
   _Release('3.5.0', 'Oct 2026', [
     'New: Google sign-in is offered automatically when you open the app — already signed in? You go straight in',
     'Dismiss the prompt and it stays away for 7 days; the app still works fully without an account',
@@ -166,7 +170,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.5.0 (build 30)',
+                Text('Version 3.5.1 (build 31)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -204,7 +208,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.5.0',
+                  applicationVersion: '3.5.1',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

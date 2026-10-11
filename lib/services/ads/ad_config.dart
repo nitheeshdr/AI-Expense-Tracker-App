@@ -35,6 +35,15 @@ class AdConfig {
   static const _prodNativeAndroid = 'ca-app-pub-6621171335214437/8895821116';
   static const _prodNativeIos = 'ca-app-pub-6621171335214437/8895821116';
 
+  static const _testRewardedInterstitialAndroid =
+      'ca-app-pub-3940256099942544/5354046379';
+  static const _testRewardedInterstitialIos =
+      'ca-app-pub-3940256099942544/6978759866';
+  static const _prodRewardedInterstitialAndroid =
+      'ca-app-pub-6621171335214437/4549098527';
+  static const _prodRewardedInterstitialIos =
+      'ca-app-pub-6621171335214437/4549098527';
+
   static bool get _android => Platform.isAndroid;
 
   static String _pick(String testA, String testI, String prodA, String prodI) {
@@ -50,6 +59,19 @@ class AdConfig {
       _testRewardedIos, _prodRewardedAndroid, _prodRewardedIos);
   static String get nativeUnit => _pick(
       _testNativeAndroid, _testNativeIos, _prodNativeAndroid, _prodNativeIos);
+
+  static String get rewardedInterstitialUnit => _pick(
+      _testRewardedInterstitialAndroid,
+      _testRewardedInterstitialIos,
+      _prodRewardedInterstitialAndroid,
+      _prodRewardedInterstitialIos);
+
+  /// Rewarded-interstitial offer: shown on every Nth page open, never more
+  /// often than [rewardedInterstitialMinGap], and the reward is this much
+  /// ad-free time.
+  static const int rewardedInterstitialEveryNPages = 3;
+  static const Duration rewardedInterstitialMinGap = Duration(minutes: 4);
+  static const Duration rewardedInterstitialReward = Duration(minutes: 30);
 
   /// Show an interstitial at most once every N qualifying actions, and never
   /// more often than [interstitialMinGap]. Tuned for higher fill while staying
