@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.5.0', 'Oct 2026', [
+    'New: Google sign-in is offered automatically when you open the app — already signed in? You go straight in',
+    'Dismiss the prompt and it stays away for 7 days; the app still works fully without an account',
+  ]),
   _Release('3.4.7', 'Oct 2026', [
     'New: optional Sign in with Google on the Profile screen — the app still works fully without an account',
   ]),
@@ -162,7 +166,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.4.7 (build 29)',
+                Text('Version 3.5.0 (build 30)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -200,7 +204,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.4.7',
+                  applicationVersion: '3.5.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

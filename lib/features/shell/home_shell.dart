@@ -13,6 +13,7 @@ import '../../core/utils/haptics.dart';
 import '../../core/settings/settings.dart';
 import '../../core/widgets/app_sheet.dart';
 import '../../services/ads/ads_manager.dart';
+import '../../services/auth/auth_service.dart';
 import '../../services/notifications/notification_service.dart';
 import '../../services/review/review_prompt_sheet.dart';
 import '../../services/updates/app_update_service.dart';
@@ -120,6 +121,11 @@ class _HomeShellState extends ConsumerState<HomeShell>
       _refreshLive();
       _handleWidgetLaunch();
       _handleNotificationLaunch();
+      // Offer Google sign-in on launch when signed out (no-op if a session
+      // already exists). Never blocks the app; see AuthService.autoSignIn.
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) unawaited(AuthService.instance.autoSignIn());
+      });
       // Ask engaged users to review once per app open (the check itself is
       // frequency-capped and no-ops for new/light users) — delayed so it
       // never competes with the startup work above for the first frame.
