@@ -98,7 +98,7 @@ class _NativeAdCardState extends State<NativeAdCard> {
           if (identical(_ad, ad)) _ad = null;
           _loading = false;
           debugPrint('Native failed: ${err.code} ${err.message}');
-          if (AdsManager.isRetryable(err) && _attempts < 8) {
+          if (AdsManager.isRetryable(err) && _attempts < 4) {
             _retryTimer?.cancel();
             _retryTimer =
                 Timer(AdsManager.retryDelayJittered(_attempts++), _kick);

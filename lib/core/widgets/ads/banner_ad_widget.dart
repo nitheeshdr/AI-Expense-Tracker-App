@@ -28,7 +28,7 @@ class _BannerAdCardState extends State<BannerAdCard> {
   int _attempts = 0;
   bool _loading = false;
   Timer? _retryTimer;
-  static const _maxAttempts = 8;
+  static const _maxAttempts = 4;
 
   @override
   void initState() {

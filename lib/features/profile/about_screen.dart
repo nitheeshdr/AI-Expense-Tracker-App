@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.5.2', 'Oct 2026', [
+    'Fixed: fewer wasted ad requests — failed ad loads now back off longer and stop after a few tries, and returning to the app no longer re-requests every ad slot at once',
+  ]),
   _Release('3.5.1', 'Oct 2026', [
     'New: watch a short video from any page for 30 minutes ad-free — always optional',
     'Fixed: ads that stayed blank on startup now load reliably, and retry after no-fill or when you return to the app',
@@ -170,7 +173,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.5.1 (build 31)',
+                Text('Version 3.5.2 (build 32)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -208,7 +211,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.5.1',
+                  applicationVersion: '3.5.2',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),

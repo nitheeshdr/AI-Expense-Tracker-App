@@ -120,18 +120,25 @@ class AdsManager {
 
   static final _rng = Random();
 
-  /// Delay before retry [attempt] (0-based) of a failed ad load: 5s, 10s,
-  /// 20s ... capped at 2 minutes. High eCPM floors mean "no fill" is common,
-  /// so retrying quickly at first (the next auction often fills) and then
-  /// backing off avoids both empty slots and hammering the ad server.
+  /// Delay before retry [attempt] (0-based) of a failed ad load: 30s, 60s,
+  /// 2m ... capped at 5 minutes. Every retry counts as an ad request, so
+  /// rapid retries after a no-fill just stack up unmatched requests and drag
+  /// the AdMob match rate down.
   static Duration retryDelay(int attempt) {
-    final secs = 5 * (1 << attempt.clamp(0, 5));
-    return Duration(seconds: secs > 120 ? 120 : secs);
+    final secs = 30 * (1 << attempt.clamp(0, 5));
+    return Duration(seconds: secs > 300 ? 300 : secs);
   }
+
+  /// Give up on a full-screen slot after this many failed loads in a row;
+  /// the next foreground resume starts a fresh round.
+  static const _maxFullScreenAttempts = 5;
 
   /// Preloaded full-screen ads expire after ~1 hour; reload before then so a
   /// stale ad is never what the user is handed.
   static const _adTtl = Duration(minutes: 50);
+
+  static const _resumeCooldown = Duration(minutes: 3);
+  DateTime _lastResumeRefresh = DateTime.fromMillisecondsSinceEpoch(0);
 
   int _interstitialAttempts = 0;
   int _rewardedAttempts = 0;
@@ -144,17 +151,24 @@ class AdsManager {
   /// expired full-screen ad slot.
   void refreshIfNeeded() {
     if (!_initialized) return;
-    resumeTick.value++;
     final now = DateTime.now();
+    // Resume also fires after every full-screen ad / permission dialog, and
+    // all visited tabs stay mounted — so each resume used to re-request every
+    // empty banner/native slot at once. Throttle it.
+    if (now.difference(_lastResumeRefresh) < _resumeCooldown) return;
+    _lastResumeRefresh = now;
+    resumeTick.value++;
     if (_interstitial == null ||
         now.difference(_interstitialLoadedAt) > _adTtl) {
       _interstitial?.dispose();
       _interstitial = null;
+      _interstitialAttempts = 0;
       _loadInterstitial();
     }
     if (_rewarded == null || now.difference(_rewardedLoadedAt) > _adTtl) {
       _rewarded?.dispose();
       _rewarded = null;
+      _rewardedAttempts = 0;
       _loadRewarded();
     }
   }
@@ -190,7 +204,8 @@ class AdsManager {
           _interstitialLoading = false;
           _interstitial = null;
           debugPrint('Interstitial failed: ${err.code} ${err.message}');
-          if (isRetryable(err)) {
+          if (isRetryable(err) &&
+              _interstitialAttempts < _maxFullScreenAttempts) {
             Future.delayed(
                 retryDelayJittered(_interstitialAttempts++), _loadInterstitial);
           }
@@ -322,7 +337,7 @@ class AdsManager {
           _rewardedLoading = false;
           _rewarded = null;
           debugPrint('Rewarded failed: ${err.code} ${err.message}');
-          if (isRetryable(err)) {
+          if (isRetryable(err) && _rewardedAttempts < _maxFullScreenAttempts) {
             Future.delayed(
                 retryDelayJittered(_rewardedAttempts++), _loadRewarded);
           }
@@ -358,7 +373,7 @@ class AdsManager {
           _rewardedInterstitial = null;
           debugPrint(
               'Rewarded interstitial failed: ${err.code} ${err.message}');
-          if (isRetryable(err)) {
+          if (isRetryable(err) && _riAttempts < _maxFullScreenAttempts) {
             Future.delayed(
                 retryDelayJittered(_riAttempts++), _loadRewardedInterstitial);
           }
