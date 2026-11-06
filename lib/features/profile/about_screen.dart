@@ -21,6 +21,9 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.6.0', 'Nov 2026', [
+    'New: Meta Audience Network added to ad mediation for better ad fill and more relevant ads',
+  ]),
   _Release('3.5.2', 'Oct 2026', [
     'Fixed: fewer wasted ad requests — failed ad loads now back off longer and stop after a few tries, and returning to the app no longer re-requests every ad slot at once',
   ]),
@@ -173,7 +176,7 @@ class AboutScreen extends StatelessWidget {
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text('Version 3.5.2 (build 32)',
+                Text('Version 3.6.0 (build 33)',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
@@ -211,7 +214,7 @@ class AboutScreen extends StatelessWidget {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'AI Expense Tracker',
-                  applicationVersion: '3.5.2',
+                  applicationVersion: '3.6.0',
                   applicationLegalese: '© 2026 Nitheesh Rajendran · Setups Works',
                 ),
               ),
