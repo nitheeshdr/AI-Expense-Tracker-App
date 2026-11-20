@@ -12,6 +12,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/widgets/ads/rewards_card.dart';
 import '../../core/widgets/ads/banner_ad_widget.dart';
 import '../../core/widgets/ads/native_ad_widget.dart';
+import '../../core/widgets/ads/naazhi_promo_card.dart';
 import '../../core/widgets/animated_count.dart';
 import '../../core/widgets/charts/bar_chart.dart';
 import '../../core/widgets/charts/donut_chart.dart';
@@ -138,7 +139,7 @@ class _DashboardList extends ConsumerWidget {
             child: _HeroCard(summary: summary, settings: settings),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const BannerAdCard(),
+          const NaazhiPromoCard(),
           const SizedBox(height: AppSpacing.sm),
           const RewardsCard(),
           const SizedBox(height: AppSpacing.sm),

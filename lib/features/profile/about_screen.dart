@@ -21,6 +21,10 @@ class _Release {
 }
 
 const _changelog = [
+  _Release('3.6.1', 'Nov 2026', [
+    'Removed Meta Audience Network — ads now serve from Google AdMob only',
+    'New: discover our Naazhi: Notes, To-do & Journal app from a banner on the home screen',
+  ]),
   _Release('3.6.0', 'Nov 2026', [
     'New: Meta Audience Network added to ad mediation for better ad fill and more relevant ads',
   ]),
