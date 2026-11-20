@@ -390,7 +390,10 @@ class AdsManager {
   void onPageOpened() {
     if (!_initialized || isAdFreeActive || _riOffering) return;
     _pageOpens++;
-    if (_pageOpens % AdConfig.rewardedInterstitialEveryNPages != 0) return;
+    if (_pageOpens % AdConfig.rewardedInterstitialEveryNPages != 0) {
+      _maybeShowPageInterstitial();
+      return;
+    }
     final now = DateTime.now();
     if (now.difference(_lastRiOffer) < AdConfig.rewardedInterstitialMinGap ||
         now.difference(_lastInterstitial) < AdConfig.interstitialMinGap) {
@@ -438,6 +441,20 @@ class AdsManager {
         ],
       ),
     ).whenComplete(() => _riOffering = false);
+  }
+
+  /// Plain interstitial on tab switches that aren't a rewarded-interstitial
+  /// turn: every 2nd page open, gated by the same time gaps so full-screen
+  /// ads never land back to back.
+  void _maybeShowPageInterstitial() {
+    if (_pageOpens % 2 != 0 || _interstitial == null) return;
+    final now = DateTime.now();
+    if (now.difference(_lastInterstitial) < AdConfig.interstitialMinGap ||
+        now.difference(_lastRiOffer) < const Duration(seconds: 90)) {
+      return;
+    }
+    _lastInterstitial = now;
+    _interstitial!.show();
   }
 
   Future<void> _showRewardedInterstitial() async {

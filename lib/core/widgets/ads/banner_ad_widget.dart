@@ -7,7 +7,7 @@ import '../../../services/ads/ad_config.dart';
 import '../../../services/ads/ads_manager.dart';
 import '../../design/spacing.dart';
 
-/// Anchored adaptive banner sized to the available width (via LayoutBuilder).
+/// Standard anchored adaptive banner (~50-60dp tall) sized to the available width (via LayoutBuilder).
 /// Uses the real platform ad size reported after load so it always renders.
 ///
 /// Loading is resilient to a slow SDK start and to no-fill: it waits for
@@ -65,7 +65,8 @@ class _BannerAdCardState extends State<BannerAdCard> {
       return;
     }
     _loading = true;
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(_width);
+    // ignore: deprecated_member_use
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(_width);
     if (size == null || !mounted) {
       _loading = false;
       return;
@@ -116,6 +117,7 @@ class _BannerAdCardState extends State<BannerAdCard> {
           return const SizedBox.shrink();
         }
         return Card(
+          clipBehavior: Clip.antiAlias,
           margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Padding(
             padding: const EdgeInsets.only(top: 4),

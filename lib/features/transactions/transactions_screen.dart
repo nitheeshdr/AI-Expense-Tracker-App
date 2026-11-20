@@ -147,11 +147,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 }
                 final grouped =
                     DateGrouping.group(filtered, (t) => t.date);
+                var rowCount = 0;
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenH, 0, AppSpacing.screenH, 130),
                   children: [
-                    for (final (i, entry) in grouped.entries.indexed) ...[
+                    for (final entry in grouped.entries) ...[
                       _GroupHeader(
                         bucket: entry.key,
                         total: entry.value.fold(
@@ -163,7 +164,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                     : 0)),
                         currency: cur,
                       ),
-                      for (final t in entry.value)
+                      for (final t in entry.value) ...[
                         _SwipeRow(
                           key: ValueKey(t.id),
                           onDelete: () async {
@@ -183,8 +184,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                 showTransactionDetail(context, ref, t),
                           ),
                         ),
-                      // Inline native ad after the first group blends into feed.
-                      if (i == 0) const NativeAdCard(),
+                        // Inline native ad every 6 rows (max 4) blends into feed.
+                        if (++rowCount % 6 == 0 && rowCount <= 24)
+                          const NativeAdCard(),
+                      ],
                     ],
                   ],
                 );
