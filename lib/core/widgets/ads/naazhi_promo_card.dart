@@ -72,6 +72,10 @@ class NaazhiPromoCard extends StatelessWidget {
                   FilledButton(
                     onPressed: _open,
                     style: FilledButton.styleFrom(
+                      // App theme sets minimumSize to full width, which breaks
+                      // layout inside a Row — override it here.
+                      minimumSize: const Size(0, 36),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                     ),
